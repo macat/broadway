@@ -101,17 +101,16 @@ func (d *Deployment) collectSteps() ([]TaskStep, error) {
 			}
 			step := NewPodmanifestStep(object)
 			steps = append(steps, TaskStep{&task, step})
-		} else {
-			for _, name := range task.Manifests {
-				m := d.Manifests[name]
-				rendered := m.Execute(d.Variables)
-				object, err := deserialize(rendered)
-				if err != nil {
-					return steps, err
-				}
-				step := NewManifestStep(object)
-				steps = append(steps, TaskStep{&task, step})
+		}
+		for _, name := range task.Manifests {
+			m := d.Manifests[name]
+			rendered := m.Execute(d.Variables)
+			object, err := deserialize(rendered)
+			if err != nil {
+				return steps, err
 			}
+			step := NewManifestStep(object)
+			steps = append(steps, TaskStep{&task, step})
 		}
 	}
 	return steps, nil

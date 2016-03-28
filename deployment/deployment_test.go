@@ -54,6 +54,20 @@ func TestDeploy(t *testing.T) {
 				},
 			},
 			Expected: 1,
+		}, {
+			Name: "Step with 1 podmanifest file and 3 manifest files",
+			Tasks: []playbook.Task{
+				{
+					Name:        "First step",
+					PodManifest: "test",
+					Manifests: []string{
+						"test",
+						"test2",
+						"test2",
+					},
+				},
+			},
+			Expected: 4,
 		},
 	}
 
