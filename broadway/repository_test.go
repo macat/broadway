@@ -66,19 +66,30 @@ func TestFindByID(t *testing.T) {
 	assert.Equal(t, "created", instance.PlaybookID)
 }
 
-func TestFindByPlaybookID(t *testing.T) {
+func TestFindByPlaybookIDOne(t *testing.T) {
 	repo := NewInstanceRepo(store.New())
-	i := &Instance{PlaybookID: "created", ID: "222"}
+	i := &Instance{PlaybookID: "one", ID: "222"}
 	repo.Save(i)
 
 	instances, err := repo.FindByPlaybookID(i.PlaybookID)
 	assert.Nil(t, err)
-	assert.NotEmpty(t, instances)
+	assert.Len(t, instances, 1)
+}
+
+func TestFindByPlaybookIDMany(t *testing.T) {
+	repo := NewInstanceRepo(store.New())
+	i := &Instance{PlaybookID: "many", ID: "1of2"}
+	repo.Save(i)
+	j := &Instance{PlaybookID: "many", ID: "2of2"}
+	repo.Save(j)
+
+	instances, err := repo.FindByPlaybookID(i.PlaybookID)
+	assert.Nil(t, err)
+	assert.Len(t, instances, 2)
 }
 
 func TestFindByPlaybookIDNoExistent(t *testing.T) {
 	repo := NewInstanceRepo(&DummyStore{})
-
 	instances, err := repo.FindByPlaybookID("notcreated")
 
 	assert.NotNil(t, err)
