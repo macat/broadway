@@ -55,7 +55,7 @@ func (*etcdStore) Values(path string) (values map[string]string) {
 	values = map[string]string{}
 	resp, err := api.Get(context.Background(), path, &etcdclient.GetOptions{Recursive: true})
 	if err != nil {
-		glog.Errorf("Ignoring error getting values: %s. Error: %s", path, err.Error())
+		glog.Warningf("Ignoring error getting values: %s. Error: %s", path, err.Error())
 		return values
 	}
 	if resp.Node != nil && len(resp.Node.Nodes) > 0 {
