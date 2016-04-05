@@ -99,7 +99,7 @@ func (s *Server) Run(addr ...string) error {
 func (s *Server) createInstance(c *gin.Context) {
 	var i instance.Instance
 	if err := c.BindJSON(&i); err != nil {
-		log.Println(err)
+		glog.Error(err)
 		c.JSON(http.StatusBadRequest, CustomError("Missing: "+err.Error()))
 		return
 	}
@@ -108,7 +108,7 @@ func (s *Server) createInstance(c *gin.Context) {
 	err := service.Create(&i)
 
 	if err != nil {
-		log.Println(err)
+		glog.Error(err)
 		c.JSON(http.StatusInternalServerError, InternalError)
 		return
 	}
@@ -190,13 +190,13 @@ type SlackCommand struct {
 func (s *Server) postCommand(c *gin.Context) {
 	var form SlackCommand
 	if err := c.BindWith(&form, binding.Form); err != nil {
-		log.Println(err)
+		glog.Error(err)
 		c.JSON(http.StatusInternalServerError, InternalError)
 		return
 	}
 
 	if form.Token != s.slackToken {
-		log.Printf("Token mismatch, actual: %s, expected: %s\n", form.Token, s.slackToken)
+		glog.Errorf("Token mismatch, actual: %s, expected: %s\n", form.Token, s.slackToken)
 		c.JSON(http.StatusUnauthorized, UnauthorizedError)
 		return
 	}
@@ -206,7 +206,7 @@ func (s *Server) postCommand(c *gin.Context) {
 	}
 	output, err := helperRunCommand(form.Text)
 	if err != nil {
-		log.Println(err)
+		glog.Error(err)
 		c.JSON(http.StatusInternalServerError, InternalError)
 		return
 	}
