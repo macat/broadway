@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -129,7 +128,6 @@ func LoadPlaybookFolder(dir string) (map[string]*Playbook, error) {
 	if len(paths) == 0 {
 		return nil, errors.New("Found zero files in directory " + dir)
 	}
-	log.Println("Found playbook files:", paths)
 	for _, path := range paths {
 		playbookBytes, err := ReadPlaybookFromDisk(path)
 		if err != nil {

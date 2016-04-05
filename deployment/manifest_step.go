@@ -2,8 +2,8 @@ package deployment
 
 import (
 	"errors"
-	"log"
 
+	"github.com/golang/glog"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/runtime"
 )
@@ -32,14 +32,14 @@ func (s *ManifestStep) Deploy() error {
 		rc, err := client.ReplicationControllers(namespace).Get(o.ObjectMeta.Name)
 
 		if err == nil && rc != nil {
-			log.Println("Updating replication controller: ", o.ObjectMeta.Name)
+			glog.Info("Updating replication controller: ", o.ObjectMeta.Name)
 			_, err = client.ReplicationControllers(namespace).Update(o)
 		} else {
-			log.Println("Creating new replication controller: ", o.ObjectMeta.Name)
+			glog.Info("Creating new replication controller: ", o.ObjectMeta.Name)
 			_, err = client.ReplicationControllers(namespace).Create(o)
 		}
 		if err != nil {
-			log.Println("Create or Update failed: ", err)
+			glog.Info("Create or Update failed: ", err)
 			return err
 		}
 	case "Pod":
@@ -47,14 +47,14 @@ func (s *ManifestStep) Deploy() error {
 		_, err := client.Pods(namespace).Get(o.ObjectMeta.Name)
 
 		if err != nil {
-			log.Println("Creating new pod: ", o.ObjectMeta.Name)
+			glog.Info("Creating new pod: ", o.ObjectMeta.Name)
 			_, err = client.Pods(namespace).Create(o)
 		} else {
-			log.Println("Updating pod", o.ObjectMeta.Name)
+			glog.Info("Updating pod", o.ObjectMeta.Name)
 			_, err = client.Pods(namespace).Update(o)
 		}
 		if err != nil {
-			log.Println("Create or Update failed: ", err)
+			glog.Info("Create or Update failed: ", err)
 			return err
 		}
 	case "Service":
@@ -62,14 +62,14 @@ func (s *ManifestStep) Deploy() error {
 		_, err := client.Services(namespace).Get(o.ObjectMeta.Name)
 
 		if err != nil {
-			log.Println("Creating new service: ", o.ObjectMeta.Name)
+			glog.Info("Creating new service: ", o.ObjectMeta.Name)
 			_, err = client.Services(namespace).Create(o)
 		} else {
-			log.Println("Updating service", o.ObjectMeta.Name)
+			glog.Info("Updating service", o.ObjectMeta.Name)
 			_, err = client.Services(namespace).Update(o)
 		}
 		if err != nil {
-			log.Println("Create or Update failed: ", err)
+			glog.Info("Create or Update failed: ", err)
 			return err
 		}
 	default:

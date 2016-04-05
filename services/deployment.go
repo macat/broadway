@@ -3,8 +3,8 @@ package services
 import (
 	"errors"
 	"fmt"
-	"log"
 
+	"github.com/golang/glog"
 	"github.com/namely/broadway/deployment"
 	"github.com/namely/broadway/instance"
 	"github.com/namely/broadway/manifest"
@@ -70,19 +70,17 @@ func (d *DeploymentService) Deploy(i *instance.Instance) error {
 	i.Status = instance.StatusDeploying
 	err = d.repo.Save(i)
 	if err != nil {
-		log.Printf("Failed to save instance status Deploying for %s/%s, continuing deployment\n", i.PlaybookID, i.ID)
-		log.Println(err)
+		glog.Errorf("Failed to save instance status Deploying for %s/%s, continuing deployment. Error: %s\n", i.PlaybookID, i.ID, err.Error())
 	}
 
 	err = deployer.Deploy()
 	if err != nil {
-		log.Printf("Deploying %s/%s failed: %s\n", i.PlaybookID, i.ID, err.Error())
+		glog.Errorf("Deploying %s/%s failed: %s\n", i.PlaybookID, i.ID, err.Error())
 		i.Status = instance.StatusError
 
 		errS := d.repo.Save(i)
 		if errS != nil {
-			log.Printf("Failed to save instance status Error for %s/%s\n", i.PlaybookID, i.ID)
-			log.Println(errS)
+			glog.Errorf("Failed to save instance status Error for %s/%s error: %s\n", i.PlaybookID, i.ID, errS.Error())
 			return errS
 		}
 		return err
@@ -91,7 +89,7 @@ func (d *DeploymentService) Deploy(i *instance.Instance) error {
 	i.Status = instance.StatusDeployed
 	err = d.repo.Save(i)
 	if err != nil {
-		log.Printf("Failed to save instance status Deployed for playbook ID %s, instance %s\n%s\n", i.PlaybookID, i.ID, err.Error())
+		glog.Errorf("Failed to save instance status Deployed for playbook ID %s, instance %s\n%s\n", i.PlaybookID, i.ID, err.Error())
 		return err
 	}
 	return nil

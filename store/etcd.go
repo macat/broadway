@@ -1,12 +1,12 @@
 package store
 
 import (
-	"log"
 	"strings"
 
 	"github.com/namely/broadway/env"
 
 	etcdclient "github.com/coreos/etcd/client"
+	"github.com/golang/glog"
 	"golang.org/x/net/context"
 )
 
@@ -19,7 +19,7 @@ func init() {
 	}
 	client, err := etcdclient.New(cfg)
 	if err != nil {
-		log.Fatal("wrong etcd client")
+		glog.Fatal("wrong etcd client")
 	}
 	api = etcdclient.NewKeysAPI(client)
 }
@@ -55,8 +55,7 @@ func (*etcdStore) Values(path string) (values map[string]string) {
 	values = map[string]string{}
 	resp, err := api.Get(context.Background(), path, &etcdclient.GetOptions{Recursive: true})
 	if err != nil {
-		log.Println("Ignoring error getting values:" + path)
-		log.Println(err)
+		glog.Errorf("Ignoring error getting values: %s. Error: %s", path, err.Error())
 		return values
 	}
 	if resp.Node != nil && len(resp.Node.Nodes) > 0 {
@@ -64,7 +63,7 @@ func (*etcdStore) Values(path string) (values map[string]string) {
 			values[lastKeyItem(node.Key)] = node.Value
 		}
 	} else {
-		log.Println("No values found here: " + path)
+		glog.Error("No values found here: " + path)
 	}
 	return values
 }
