@@ -11,7 +11,7 @@ import (
 )
 
 func TestDeployment(t *testing.T) {
-	nt := newNotificationtestHelper()
+	nt := newNotificationTestHelper()
 	defer nt.Close()
 	manifests, err := NewManifestService("../examples/manifests/").LoadManifestFolder()
 	if err != nil {

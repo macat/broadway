@@ -14,7 +14,7 @@ type notificationTestHelper struct {
 	ts          *httptest.Server
 }
 
-func newNotificationtestHelper() *notificationTestHelper {
+func newNotificationTestHelper() *notificationTestHelper {
 	n := &notificationTestHelper{
 		requestBody: "",
 	}

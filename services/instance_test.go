@@ -9,7 +9,7 @@ import (
 )
 
 func TestCreateInstance(t *testing.T) {
-	nt := newNotificationtestHelper()
+	nt := newNotificationTestHelper()
 	defer nt.Close()
 	store := store.New()
 	service := NewInstanceService(store)
