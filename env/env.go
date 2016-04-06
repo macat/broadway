@@ -13,8 +13,11 @@ var (
 	// ServerHost is passed to gin and configures the listen address of the server
 	ServerHost string
 
-	// KubernetesPort represents KUBERNETES_PORT variable
-	KubernetesPort string
+	// K8sServiceHost is the Kubernetes host
+	K8sServiceHost string
+
+	// K8sServicePort is the Kubernetes port
+	K8sServicePort string
 
 	// K8sNamespace is the namespace used by Broadway's deployments
 	K8sNamespace string
@@ -34,7 +37,8 @@ func LoadEnvs() {
 	SlackWebhook = loadw("SLACK_WEBHOOK")
 	SlackToken = loadw("SLACK_VERIFICATION_TOKEN")
 	ServerHost = loadw("HOST")
-	KubernetesPort = loadw("KUBERNETES_PORT")
+	K8sServiceHost = loadw("KUBERNETES_SERVICE_HOST")
+	K8sServicePort = loadw("KUBERNETES_PORT_443_TCP_PORT")
 	K8sNamespace = loadf("KUBERNETES_NAMESPACE")
 	EtcdHost = loadw("ETCD_HOST")
 	EtcdPath = loadw("ETCD_PATH")
