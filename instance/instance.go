@@ -1,6 +1,10 @@
 package instance
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/namely/broadway/env"
+)
 
 // Instance entity
 type Instance struct {
@@ -37,5 +41,5 @@ func (i *Instance) JSON() (string, error) {
 
 // Path for an instance
 func (i *Instance) Path() string {
-	return "/broadway/instances/" + i.PlaybookID + "/" + i.ID
+	return env.EtcdPath + "/instances/" + i.PlaybookID + "/" + i.ID
 }

@@ -8,6 +8,7 @@ services:
     command: go run main.go
     environment:
       ETCD_HOST: "http://localhost:4001"
+      ETCD_PATH: "/broadway"
       HOST: ":3000"
       KUBERNETES_NAMESPACE: "broadway"
     network_mode: host
@@ -19,6 +20,7 @@ services:
     command: echo "hello"
     environment:
       ETCD_HOST: "http://localhost:4001"
+      ETCD_PATH: "/broadwaytest"
       HOST: ":3000"
       KUBERNETES_NAMESPACE: "broadway"
     network_mode: host
