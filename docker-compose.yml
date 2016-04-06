@@ -7,6 +7,7 @@ services:
       - .:/go/src/github.com/namely/broadway
     command: go run main.go
     environment:
+      SLACK_WEBHOOK: ""
       ETCD_HOST: "http://localhost:4001"
       ETCD_PATH: "/broadway"
       HOST: ":3000"
@@ -19,6 +20,7 @@ services:
       - .:/go/src/github.com/namely/broadway
     command: echo "hello"
     environment:
+      SLACK_WEBHOOK: ""
       ETCD_HOST: "http://localhost:4001"
       ETCD_PATH: "/broadwaytest"
       HOST: ":3000"

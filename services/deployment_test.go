@@ -11,6 +11,8 @@ import (
 )
 
 func TestDeployment(t *testing.T) {
+	nt := newNotificationtestHelper()
+	defer nt.Close()
 	manifests, err := NewManifestService("../examples/manifests/").LoadManifestFolder()
 	if err != nil {
 		panic(err)
@@ -34,4 +36,5 @@ func TestDeployment(t *testing.T) {
 	err = service.Deploy(i)
 	assert.Nil(t, err)
 	assert.EqualValues(t, instance.StatusDeployed, i.Status)
+	assert.Contains(t, nt.requestBody, "deployed")
 }

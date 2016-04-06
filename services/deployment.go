@@ -8,6 +8,7 @@ import (
 	"github.com/namely/broadway/deployment"
 	"github.com/namely/broadway/instance"
 	"github.com/namely/broadway/manifest"
+	"github.com/namely/broadway/notification"
 	"github.com/namely/broadway/playbook"
 	"github.com/namely/broadway/store"
 )
@@ -92,6 +93,24 @@ func (d *DeploymentService) Deploy(i *instance.Instance) error {
 		glog.Errorf("Failed to save instance status Deployed for playbook ID %s, instance %s\n%s\n", i.PlaybookID, i.ID, err.Error())
 		return err
 	}
+
+	err = sendDeploymentNotification(i)
+	if err != nil {
+		return err
+	}
+
 	return nil
 
+}
+
+func sendDeploymentNotification(i *instance.Instance) error {
+	m := &notification.Message{
+		Attachments: []notification.Attachment{
+			{
+				Text: fmt.Sprintf("Instance was deployed: %s %s.", i.PlaybookID, i.ID),
+			},
+		},
+	}
+
+	return m.Send()
 }

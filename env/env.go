@@ -27,23 +27,35 @@ var (
 
 	// EtcdPath is the root directory for Broadway objects
 	EtcdPath string
+
+	// SlackWebhook is the Slack incoming webhook
+	SlackWebhook string
 )
 
 // LoadEnvs sets env.* variables to their OS-provided value
 func LoadEnvs() {
-	SlackToken = load("SLACK_VERIFICATION_TOKEN")
-	ServerHost = load("HOST")
-	K8sServiceHost = load("KUBERNETES_SERVICE_HOST")
-	K8sServicePort = load("KUBERNETES_PORT_443_TCP_PORT")
-	K8sNamespace = load("KUBERNETES_NAMESPACE")
-	EtcdHost = load("ETCD_HOST")
-	EtcdPath = load("ETCD_PATH")
+	SlackWebhook = loadw("SLACK_WEBHOOK")
+	SlackToken = loadw("SLACK_VERIFICATION_TOKEN")
+	ServerHost = loadw("HOST")
+	K8sServiceHost = loadw("KUBERNETES_SERVICE_HOST")
+	K8sServicePort = loadw("KUBERNETES_PORT_443_TCP_PORT")
+	K8sNamespace = loadf("KUBERNETES_NAMESPACE")
+	EtcdHost = loadw("ETCD_HOST")
+	EtcdPath = loadw("ETCD_PATH")
 }
 
-func load(key string) string {
+func loadw(key string) string {
 	val, ok := os.LookupEnv(key)
 	if !ok {
 		glog.Warningf("Environment variable %s unset; defaulting to empty string\n", key)
+	}
+	return val
+}
+
+func loadf(key string) string {
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		glog.Fatalf("Environment variable %s unset; Exiting.n", key)
 	}
 	return val
 }

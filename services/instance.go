@@ -1,7 +1,10 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/namely/broadway/instance"
+	"github.com/namely/broadway/notification"
 	"github.com/namely/broadway/store"
 )
 
@@ -17,7 +20,17 @@ func NewInstanceService(s store.Store) *InstanceService {
 
 // Create a new instance
 func (is *InstanceService) Create(i *instance.Instance) error {
-	return is.repo.Save(i)
+	err := is.repo.Save(i)
+	if err != nil {
+		return err
+	}
+
+	err = sendCreationNotification(i)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Show takes playbookID and instanceID and returns the matching Instance, if
@@ -33,4 +46,16 @@ func (is *InstanceService) Show(playbookID, ID string) (*instance.Instance, erro
 // AllWithPlaybookID returns all the instances for an specified playbook id
 func (is *InstanceService) AllWithPlaybookID(playbookID string) ([]*instance.Instance, error) {
 	return is.repo.FindByPlaybookID(playbookID)
+}
+
+func sendCreationNotification(i *instance.Instance) error {
+	m := &notification.Message{
+		Attachments: []notification.Attachment{
+			{
+				Text: fmt.Sprintf("New broadway instance was created: %s %s.", i.PlaybookID, i.ID),
+			},
+		},
+	}
+
+	return m.Send()
 }
