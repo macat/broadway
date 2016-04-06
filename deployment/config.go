@@ -62,7 +62,7 @@ func KubernetesConfig() (*restclient.Config, error) {
 		return nil, err
 	}
 	return &restclient.Config{
-		Host:        "http://" + env.K8sServiceHost + ":" + env.K8sServicePort,
+		Host:        "https://" + env.K8sServiceHost + ":" + env.K8sServicePort,
 		BearerToken: string(token),
 		TLSClientConfig: restclient.TLSClientConfig{
 			CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
