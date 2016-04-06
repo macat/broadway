@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 
+	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/runtime"
@@ -44,6 +45,8 @@ func (s *PodManifestStep) Deploy() error {
 		selector := fields.Set{"metadata.name": o.ObjectMeta.Name}.AsSelector()
 		lo := api.ListOptions{Watch: true, FieldSelector: selector}
 		watcher, err := client.Pods(namespace).Watch(lo)
+		defer watcher.Stop()
+		var pod *v1.Pod
 		for {
 			event := <-watcher.ResultChan()
 			log.Println(event)
@@ -60,9 +63,9 @@ func (s *PodManifestStep) Deploy() error {
 				break
 			}
 		}
-		log.Println(i.Name(), " - ...Setup pod finished")
+		log.Println("Setup pod finished: ", o.ObjectMeta.Name)
 		if pod.Status.Phase == "Failed" {
-			log.Println(i.Name(), " - Setup pod failed.")
+			log.Println("Setup pod failed: ", o.ObjectMeta.Name)
 			return errors.New("Setup pod failed!")
 		}
 	}

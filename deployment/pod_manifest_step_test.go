@@ -56,7 +56,7 @@ func TestPodManifestStepDeploy(t *testing.T) {
 		client.(*fake.FakeCore).Fake.ClearActions()
 		assert.Equal(t, 0, len(f.Actions()), c.Name+" action count did not reset")
 		err := step.Deploy()
-		assert.Equal(t, err, c.Expected, c.Name+" error was not expected result")
+		assert.Equal(t, c.Expected, err, c.Name+" error was not expected result")
 
 		// manifest step should always fire only 2 actions
 		// assert.Equal(t, 2, len(f.Actions()), c.Name+" fired less/more than 2 actions")
