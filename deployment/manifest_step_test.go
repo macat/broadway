@@ -15,7 +15,7 @@ func init() {
 	namespace = "test"
 }
 
-func mustDeseralize(manifest string) runtime.Object {
+func mustDeserialize(manifest string) runtime.Object {
 	o, err := deserialize(manifest)
 	if err != nil {
 		panic(err)
@@ -32,16 +32,16 @@ func TestManifestStepDeploy(t *testing.T) {
 	}{
 		{
 			Name:     "Simple RC create",
-			Object:   mustDeseralize(rct1),
+			Object:   mustDeserialize(rct1),
 			Expected: "update",
 			Before:   func() {},
 		},
 		{
 			Name:     "Simple RC update",
-			Object:   mustDeseralize(rct1),
+			Object:   mustDeserialize(rct1),
 			Expected: "update",
 			Before: func() {
-				rc := mustDeseralize(rct1).(*v1.ReplicationController)
+				rc := mustDeserialize(rct1).(*v1.ReplicationController)
 				client.ReplicationControllers("test").Create(rc)
 			},
 		},
