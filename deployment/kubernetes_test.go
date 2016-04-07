@@ -50,7 +50,7 @@ func TestDeploy(t *testing.T) {
 			Tasks: []playbook.Task{
 				{
 					Name:        "First step",
-					PodManifest: "test",
+					PodManifest: "test3",
 				},
 			},
 			Expected: 2,
@@ -59,11 +59,11 @@ func TestDeploy(t *testing.T) {
 			Tasks: []playbook.Task{
 				{
 					Name:        "First step",
-					PodManifest: "test",
+					PodManifest: "test3",
 				},
 				{
 					Name:        "Second step",
-					PodManifest: "test",
+					PodManifest: "test3",
 				},
 			},
 			Expected: 4,
@@ -74,10 +74,11 @@ func TestDeploy(t *testing.T) {
 		"test": "ok",
 	}
 	m, _ := manifest.New("test", mtemplate)
+	p, _ := manifest.New("test", ptemplate)
 	manifests := map[string]*manifest.Manifest{
 		"test":  m,
 		"test2": m,
-		"test3": m,
+		"test3": p,
 	}
 
 	for _, c := range cases {
@@ -118,6 +119,15 @@ spec:
       labels:
         name: redis
     spec:
+      containers:
+      - name: redis
+        image: kubernetes/redis:v1
+`
+var ptemplate = `apiVersion: v1
+kind: Pod
+metadata:
+  name: test
+spec:
       containers:
       - name: redis
         image: kubernetes/redis:v1
