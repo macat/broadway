@@ -10,14 +10,14 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 )
 
-// PodmanifestStep implements a deployment step with pod manifest
+// PodManifestStep implements a deployment step with pod manifest
 type PodManifestStep struct {
 	object runtime.Object
 }
 
 var _ Step = &PodManifestStep{}
 
-// NewPodmanifestStep creates a podmanifest step and returns a Step
+// NewPodManifestStep creates a PodManifestStep and returns a Step
 func NewPodManifestStep(object runtime.Object) Step {
 	return &PodManifestStep{
 		object: object,
@@ -63,6 +63,7 @@ func (s *PodManifestStep) Deploy() error {
 				break
 			}
 		}
+
 		log.Println("Setup pod finished: ", o.ObjectMeta.Name)
 		if pod.Status.Phase == "Failed" {
 			log.Println("Setup pod failed: ", o.ObjectMeta.Name)
