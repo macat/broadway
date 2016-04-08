@@ -4,11 +4,14 @@ import (
 	"testing"
 
 	"errors"
+
 	"github.com/stretchr/testify/assert"
 
+	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
 	"k8s.io/kubernetes/pkg/client/typed/generated/core/v1/fake"
 	"k8s.io/kubernetes/pkg/runtime"
+	"k8s.io/kubernetes/pkg/watch"
 )
 
 func init() {
@@ -28,45 +31,63 @@ func TestPodManifestStepDeploy(t *testing.T) {
 		Name     string
 		Object   runtime.Object
 		Expected error
-		Before   func()
+		Events   func(*watch.FakeWatcher, *v1.Pod)
 	}{
 		{
 			Name:     "Simple Pod create",
-			Object:   mustDeseralize(podt1),
+			Object:   mustDeserialize(podt1),
 			Expected: nil,
-			Before:   func() {},
+			Events: func(w *watch.FakeWatcher, pod *v1.Pod) {
+				pod.Status = v1.PodStatus{
+					Phase: v1.PodPending,
+				}
+				w.Modify(pod)
+				pod.Status = v1.PodStatus{
+					Phase: v1.PodRunning,
+				}
+				w.Modify(pod)
+				pod.Status = v1.PodStatus{
+					Phase: v1.PodSucceeded,
+				}
+				w.Modify(pod)
+			},
 		},
 		{
 			Name:     "Simple Pod failure",
-			Object:   mustDeseralize(podt1),
+			Object:   mustDeserialize(podt1),
 			Expected: errors.New("Setup pod failed!"),
-			Before: func() {
-				// rc := mustDeseralize(rct1).(*v1.ReplicationController)
-				// client.ReplicationControllers("test").Create(rc)
+			Events: func(w *watch.FakeWatcher, pod *v1.Pod) {
+				pod.Status = v1.PodStatus{
+					Phase: v1.PodPending,
+				}
+				w.Modify(pod)
+				pod.Status = v1.PodStatus{
+					Phase: v1.PodRunning,
+				}
+				w.Modify(pod)
+				pod.Status = v1.PodStatus{
+					Phase: v1.PodFailed,
+				}
+				w.Modify(pod)
 			},
 		},
 	}
 
 	for _, c := range cases {
 		// Reset client
-		client = &fake.FakeCore{&core.Fake{}}
-		f := client.(*fake.FakeCore).Fake
+		pod := mustDeserialize(podt1).(*v1.Pod)
+		f := &core.Fake{}
+		w := watch.NewFake()
+		f.AddWatchReactor("*", core.DefaultWatchReactor(w, nil))
+
+		go c.Events(w, pod)
+
+		client = &fake.FakeCore{f}
 		step := NewPodManifestStep(c.Object)
-		c.Before()
 		client.(*fake.FakeCore).Fake.ClearActions()
 		assert.Equal(t, 0, len(f.Actions()), c.Name+" action count did not reset")
 		err := step.Deploy()
 		assert.Equal(t, c.Expected, err, c.Name+" error was not expected result")
-
-		// manifest step should always fire only 2 actions
-		// assert.Equal(t, 2, len(f.Actions()), c.Name+" fired less/more than 2 actions")
-
-		// verbs := []string{}
-		// for _, a := range f.Actions() {
-		// 	verbs = append(verbs, a.GetVerb())
-		// }
-		//
-		// assert.Contains(t, verbs, c.Expected, c.Name+" actions didn't contain the expected verb")
 	}
 }
 
