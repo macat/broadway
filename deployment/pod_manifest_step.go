@@ -47,12 +47,9 @@ func (s *PodManifestStep) Deploy() error {
 	defer watcher.Stop()
 	var pod *v1.Pod
 	for {
-		log.Println("BOOOOM")
 		event := <-watcher.ResultChan()
 		pod = event.Object.(*v1.Pod)
 
-		log.Println(pod.Status.Phase)
-		log.Println("===")
 		if pod.Status.Phase != v1.PodPending && pod.Status.Phase != v1.PodRunning {
 			log.Println("NOT PENDING AND NOT RUNNING")
 			break
