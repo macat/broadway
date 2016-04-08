@@ -8,3 +8,5 @@ tasks:
   - name: Deploy Hello World
     manifests:
       - hello
+  - name: Deploy Hello World Setup Pod
+    pod_manifest: hello-pod

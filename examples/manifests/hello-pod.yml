@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-pod
+spec:
+  selector:
+    name: hello-pod
+  containers:
+    - name: hello-pod
+      image: hello-world:latest

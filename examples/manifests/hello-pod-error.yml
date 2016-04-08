@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-pod-error
+spec:
+  selector:
+    name: hello-pod-error
+  containers:
+    - name: hello-pod-error
+      image: hello-world:latest
+      command: "/error"
