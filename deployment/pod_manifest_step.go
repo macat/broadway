@@ -61,6 +61,10 @@ func (s *PodManifestStep) Deploy() error {
 		log.Println("Setup pod failed: ", o.ObjectMeta.Name)
 		return errors.New("Setup pod failed!")
 	}
+	if pod.Status.Phase == v1.PodUnknown {
+		log.Println("Setup pod failed: ", o.ObjectMeta.Name)
+		return errors.New("State of Pod Unknown")
+	}
 
 	return nil
 }

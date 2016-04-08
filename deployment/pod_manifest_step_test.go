@@ -71,6 +71,25 @@ func TestPodManifestStepDeploy(t *testing.T) {
 				w.Modify(pod)
 			},
 		},
+		{
+			Name:     "Unknown Pod failure",
+			Object:   mustDeserialize(podt1),
+			Expected: errors.New("State of Pod Unknown"),
+			Events: func(w *watch.FakeWatcher, pod *v1.Pod) {
+				pod.Status = v1.PodStatus{
+					Phase: v1.PodPending,
+				}
+				w.Modify(pod)
+				pod.Status = v1.PodStatus{
+					Phase: v1.PodRunning,
+				}
+				w.Modify(pod)
+				pod.Status = v1.PodStatus{
+					Phase: v1.PodUnknown,
+				}
+				w.Modify(pod)
+			},
+		},
 	}
 
 	for _, c := range cases {
