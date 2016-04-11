@@ -59,8 +59,7 @@ func (s *PodManifestStep) Deploy() error {
 	lo := api.ListOptions{Watch: true, FieldSelector: selector}
 	watcher, err := client.Pods(namespace).Watch(lo)
 	defer watcher.Stop()
-	podv := v1.Pod{}
-	var pod *v1.Pod
+	pod := &v1.Pod{}
 
 	for {
 		var ok bool
@@ -87,18 +86,10 @@ func (s *PodManifestStep) Deploy() error {
 			log.Println("pod ", pod)
 			log.Println("apipod ", apipod)
 
-			podSpec := v1.PodSpec{}
-			log.Println("podSpec ", podSpec)
-			err = scheme.Convert(apipod.Spec, &podSpec)
+			err = api.Scheme.Convert(apipod, pod)
 			if err != nil {
 				log.Println(err)
 			}
-			log.Println("podSpec ", podSpec)
-			err = scheme.Convert(apipod, &podv)
-			if err != nil {
-				log.Println(err)
-			}
-			pod = &podv
 		}
 
 		if pod.Status.Phase != v1.PodPending && pod.Status.Phase != v1.PodRunning {
