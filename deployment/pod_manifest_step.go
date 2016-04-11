@@ -6,7 +6,7 @@ import (
 
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/conversion"
+	// "k8s.io/kubernetes/pkg/conversion"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/runtime"
 )
@@ -59,28 +59,56 @@ func (s *PodManifestStep) Deploy() error {
 	lo := api.ListOptions{Watch: true, FieldSelector: selector}
 	watcher, err := client.Pods(namespace).Watch(lo)
 	defer watcher.Stop()
+	podv := v1.Pod{}
 	var pod *v1.Pod
 
 	for {
+		var ok bool
+		log.Println("1")
 		event := <-watcher.ResultChan()
-		log.Printf("%T", event)
-		err = DefaultConvert(event.Object.(*api.Pod), pod, flags, meta)
-		if err != nil {
-			log.Println("conversion ", err)
+		pod, ok = event.Object.(*v1.Pod)
+		if !ok {
+			log.Println("2")
+			apipod := event.Object.(*api.Pod)
+
+			// pod = &v1.Pod{
+			// 	ObjectMeta: v1.ObjectMeta{
+			// 		Labels:      make(map[string]string),
+			// 		Annotations: make(map[string]string),
+			// 	},
+			// 	Status: v1.PodStatus{
+			// 		Volumes: []v1.Volume{}
+			// 		Container: []v1.Container{}
+			// 	},
+			// 	Spec:   v1.PodSpec{
+			//
+			// 	},
+			// }
+			log.Println("pod ", pod)
+			log.Println("apipod ", apipod)
+
+			podSpec := v1.PodSpec{}
+			log.Println("podSpec ", podSpec)
+			err = scheme.Convert(apipod.Spec, &podSpec)
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println("podSpec ", podSpec)
+			err = scheme.Convert(apipod, &podv)
+			if err != nil {
+				log.Println(err)
+			}
+			pod = &podv
 		}
-		// switch event.(type) {
-		// case *v1.:
-		pod = event.Object.(*v1.Pod)
-		// case *api.Pod:
-		// 	v1.Convert_api_Pod_To_v1_Pod(event.Object.(*api.Pod), pod)
-		// }
 
 		if pod.Status.Phase != v1.PodPending && pod.Status.Phase != v1.PodRunning {
 			log.Println("NOT PENDING AND NOT RUNNING")
 			break
 		}
 	}
+	log.Println("pod ", pod)
 
+	log.Println("3")
 	log.Println("Setup pod finished: ", o.ObjectMeta.Name)
 	if pod.Status.Phase == v1.PodFailed {
 		log.Println("Setup pod failed: ", o.ObjectMeta.Name)

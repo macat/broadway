@@ -27,6 +27,7 @@ var groupVersionKind = unversioned.GroupVersionKind{
 var client coreclient.CoreInterface
 var deserializer runtime.Decoder
 var namespace string
+var scheme *runtime.Scheme
 
 // Step represents a deployment step
 type Step interface {
