@@ -96,6 +96,7 @@ func (d *KubernetesDeployment) steps() ([]TaskStep, error) {
 			rendered := m.Execute(d.Variables)
 			object, err := deserialize(rendered)
 			if err != nil {
+				glog.Warningf("Failed to parse pod manifest %s - %s", task.Name, task.PodManifest)
 				return steps, err
 			}
 			step := NewPodManifestStep(object)
@@ -106,6 +107,7 @@ func (d *KubernetesDeployment) steps() ([]TaskStep, error) {
 				rendered := m.Execute(d.Variables)
 				object, err := deserialize(rendered)
 				if err != nil {
+					glog.Warningf("Failed to parse manifest %s - %s", task.Name, name)
 					return steps, err
 				}
 				step := NewManifestStep(object)
