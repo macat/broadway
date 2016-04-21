@@ -68,6 +68,10 @@ func LoadEnvs() {
 	K8sServicePort = loadw("KUBERNETES_PORT_443_TCP_PORT")
 	K8sNamespace = loadf("KUBERNETES_NAMESPACE")
 
+	K8sCertFile = loadw("KUBERNETES_CERT_FILE")
+	K8sKeyFile = loadw("KUBERNETES_KEY_FILE")
+	K8sCAFile = loadw("KUBERNETES_CA_FILE")
+
 	EtcdHost = loadw("ETCD_HOST")
 	EtcdPath = loadw("ETCD_PATH")
 }
