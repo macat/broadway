@@ -83,11 +83,10 @@ func LocalConfig() *restclient.Config {
 				CAFile:   env.K8sCAFile,
 			},
 		}
+	}
 
-	} else {
-		return &restclient.Config{
-			Host:     "http://localhost:8080",
-			Insecure: true,
-		}
+	return &restclient.Config{
+		Host:     "http://localhost:8080",
+		Insecure: true,
 	}
 }
