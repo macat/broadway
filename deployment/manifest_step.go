@@ -59,13 +59,15 @@ func (s *ManifestStep) Deploy() error {
 		}
 	case "Service":
 		o := s.object.(*v1.Service)
-		_, err := client.Services(namespace).Get(o.ObjectMeta.Name)
+		service, err := client.Services(namespace).Get(o.ObjectMeta.Name)
 
 		if err != nil {
 			glog.Info("Creating new service: ", o.ObjectMeta.Name)
 			_, err = client.Services(namespace).Create(o)
 		} else {
 			glog.Info("Updating service", o.ObjectMeta.Name)
+			o.ObjectMeta.ResourceVersion = service.ObjectMeta.ResourceVersion
+			o.Spec.ClusterIP = service.Spec.ClusterIP
 			_, err = client.Services(namespace).Update(o)
 		}
 		if err != nil {
