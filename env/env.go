@@ -25,6 +25,15 @@ var (
 	// K8sNamespace is the namespace used by Broadway's deployments
 	K8sNamespace string
 
+	// K8sCertFile is the cert file setting for local development
+	K8sCertFile string
+
+	// K8sKeyFile is the key file setting for local development
+	K8sKeyFile string
+
+	// K8sCAFile is the CA file setting for local development
+	K8sCAFile string
+
 	// EtcdHost is the Etcd host
 	EtcdHost string
 
