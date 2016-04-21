@@ -77,7 +77,7 @@ func LocalConfig() *restclient.Config {
 
 		return &restclient.Config{
 			Host: env.K8sServiceHost,
-			TLSClientConfig: kclient.TLSClientConfig{
+			TLSClientConfig: restclient.TLSClientConfig{
 				CertFile: env.K8sCertFile,
 				KeyFile:  env.K8sKeyFile,
 				CAFile:   env.K8sCAFile,
