@@ -34,8 +34,8 @@ var (
 	// K8sCAFile is the CA file setting for local development
 	K8sCAFile string
 
-	// EtcdHost is the Etcd host
-	EtcdHost string
+	// EtcdEndpoints is the list Etcd hosts separated by comma
+	EtcdEndpoints string
 
 	// EtcdPath is the root directory for Broadway objects
 	EtcdPath string
