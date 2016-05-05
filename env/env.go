@@ -81,7 +81,7 @@ func LoadEnvs() {
 	K8sKeyFile = loadw("KUBERNETES_KEY_FILE")
 	K8sCAFile = loadw("KUBERNETES_CA_FILE")
 
-	EtcdHost = loadw("ETCD_HOST")
+	EtcdEndpoints = loadw("ETCD_ENDPOINTS")
 	EtcdPath = loadw("ETCD_PATH")
 }
 

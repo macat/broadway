@@ -14,8 +14,9 @@ var api etcdclient.KeysAPI
 
 func init() {
 	var err error
+	endpoints := strings.Split(env.EtcdEndpoints, ",")
 	cfg := etcdclient.Config{
-		Endpoints: []string{env.EtcdHost},
+		Endpoints: endpoints,
 	}
 	client, err := etcdclient.New(cfg)
 	if err != nil {
