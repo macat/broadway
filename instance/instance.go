@@ -12,7 +12,7 @@ type Instance struct {
 	ID         string            `json:"id"`
 	Created    string            `json:"created"`
 	Vars       map[string]string `json:"vars"`
-	Status
+	Status     `json:"status"`
 }
 
 // Status for an instance
