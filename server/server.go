@@ -105,7 +105,8 @@ func authMiddleware(c *gin.Context) {
 	a = strings.TrimPrefix(a, "Bearer ")
 	if len(a) == 0 || a != env.AuthBearerToken {
 		glog.Infof("Auth failure for %s\nExpected: %s Actual: %s\n", c.Request.URL.Path, env.AuthBearerToken, a)
-		c.AbortWithStatus(401)
+		c.String(http.StatusUnauthorized, "Wrong or Missing Authorization")
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 	c.Next()

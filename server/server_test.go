@@ -71,11 +71,15 @@ func TestAuthFailureHints(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/", nil)
 	req.Header.Set("Authorization", "Bearer faketoken")
 	server.ServeHTTP(w, req)
-	assert.Contains(t, w.Body.String(), "Wrong")
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code, "Response code should be 401")
+	assert.Contains(t, w.Body.String(), "Authorization")
 
 	req, _ = http.NewRequest("GET", "/", nil)
 	server.ServeHTTP(w, req)
-	assert.Contains(t, w.Body.String(), "Missing")
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code, "Response code should be 401")
+	assert.Contains(t, w.Body.String(), "Authorization")
 }
 
 func TestInstanceCreateWithValidAttributes(t *testing.T) {
