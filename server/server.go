@@ -110,6 +110,7 @@ func authMiddleware(c *gin.Context) {
 			c.String(http.StatusUnauthorized, "Unauthorized: Wrong Authorization header")
 		}
 		glog.Infof("Auth failure for %s\nExpected: %s Actual: %s\n", c.Request.URL.Path, env.AuthBearerToken, a)
+		c.AbortWithStatus(401)
 		return
 	}
 	c.Next()
