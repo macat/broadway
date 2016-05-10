@@ -103,12 +103,7 @@ func (s *Server) Run(addr ...string) error {
 func authMiddleware(c *gin.Context) {
 	a := c.Request.Header.Get("Authorization")
 	a = strings.TrimPrefix(a, "Bearer ")
-	if a != env.AuthBearerToken {
-		if len(a) == 0 {
-			c.String(http.StatusUnauthorized, "Unauthorized: Missing Authorization header")
-		} else {
-			c.String(http.StatusUnauthorized, "Unauthorized: Wrong Authorization header")
-		}
+	if len(a) == 0 || a != env.AuthBearerToken {
 		glog.Infof("Auth failure for %s\nExpected: %s Actual: %s\n", c.Request.URL.Path, env.AuthBearerToken, a)
 		c.AbortWithStatus(401)
 		return
