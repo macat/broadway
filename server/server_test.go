@@ -24,8 +24,9 @@ var testToken = "BroadwayTestToken"
 func makeRequest(req *http.Request, w *httptest.ResponseRecorder) {
 	mem := store.New()
 
-	server := New(mem).Handler()
-	server.ServeHTTP(w, req)
+	server := New(mem)
+	server.Init()
+	server.Handler().ServeHTTP(w, req)
 }
 
 func auth(req *http.Request) *http.Request {

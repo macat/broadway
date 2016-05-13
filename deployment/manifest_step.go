@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/golang/glog"
+	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/runtime"
 )
@@ -76,6 +77,24 @@ func (s *ManifestStep) Deploy() error {
 		}
 	default:
 		return errors.New("Kubernetes resource is not recognized: " + oGVK.Kind)
+	}
+	return nil
+}
+
+// Destroy deletes kubernetes resource
+func (s *ManifestStep) Destroy() error {
+	oGVK := s.object.GetObjectKind().GroupVersionKind()
+	meta, err := api.ObjectMetaFor(s.object)
+	if err != nil {
+		return err
+	}
+	switch oGVK.Kind {
+	case "ReplicationController":
+		client.ReplicationControllers(namespace).Delete(meta.Name, nil)
+	case "Service":
+		client.Services(namespace).Delete(meta.Name, nil)
+	case "Pod":
+		client.Pods(namespace).Delete(meta.Name, nil)
 	}
 	return nil
 }

@@ -136,24 +136,40 @@ func (e *InvalidDelete) Error() string {
 
 // Delete slack command
 type deleteCommand struct {
-	args []string
-	is   *InstanceService
+	pID string
+	ID  string
+	is  *InstanceService
 }
 
 func (c *deleteCommand) Execute() (string, error) {
-	if len(c.args) < 3 {
-		return "", &InvalidDelete{}
+	// todo: Load these from deployment package like playbooks
+	ms := NewManifestService(env.ManifestsPath)
+	AllManifests, err := ms.LoadManifestFolder()
+	if err != nil {
+		glog.Error(err)
 	}
-	iToDelete, err := c.is.Show(c.args[1], c.args[2])
 
+	ds := NewDeploymentService(store.New(), deployment.AllPlaybooks, AllManifests)
+
+	i, err := c.is.Show(c.pID, c.ID)
 	if err != nil {
-		return "", err
+		msg := fmt.Sprintf("Failed to delete instance %s/%s: Instance not found", c.pID, c.ID)
+		glog.Error(msg)
+		return msg, err
 	}
-	err = c.is.Delete(iToDelete)
-	if err != nil {
-		return "", err
-	}
-	return "Instance successfully deleted", nil
+
+	go func() {
+		glog.Infof("Asynchronously deleting %s/%s...", i.PlaybookID, i.ID)
+		err := ds.DeleteAndNotify(i)
+		if err != nil {
+			glog.Errorf("Slack command failed to delete instance %s/%s:\n%s\n", i.PlaybookID, i.ID, err)
+			return
+		}
+		glog.Infof("Slack command successfully deleted instance %s/%s", i.PlaybookID, i.ID)
+		return
+	}()
+
+	return fmt.Sprintf("Started deletion of %s/%s", i.PlaybookID, i.ID), nil
 }
 
 // BuildSlackCommand takes a string and some context and creates a SlackCommand
@@ -172,7 +188,10 @@ func BuildSlackCommand(payload string, is *InstanceService, playbooks map[string
 			is:  is,
 		}
 	case "delete":
-		return &deleteCommand{args: terms, is: is}
+		if len(terms) < 3 {
+			return &helpCommand{}
+		}
+		return &deleteCommand{pID: terms[1], ID: terms[2], is: is}
 	default:
 		return &helpCommand{}
 	}

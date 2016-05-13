@@ -14,20 +14,18 @@ func TestDeployExecute(t *testing.T) {
 	defer nt.Close()
 	is := NewInstanceService(store.New())
 	testcases := []struct {
-		Scenario       string
-		Arguments      string
-		Instance       *instance.Instance
-		Playbooks      map[string]*deployment.Playbook
-		ExpectedStatus instance.Status
-		ExpectedMsg    string
-		E              error
+		Scenario    string
+		Arguments   string
+		Instance    *instance.Instance
+		Playbooks   map[string]*deployment.Playbook
+		ExpectedMsg string
+		E           error
 	}{
 		{
 			"Test Deployment through slack command",
 			"deploy helloplaybook chickenman",
 			&instance.Instance{PlaybookID: "helloplaybook", ID: "chickenman"},
 			map[string]*deployment.Playbook{"helloplaybook": &deployment.Playbook{ID: "helloplaybook"}},
-			instance.StatusNew, // it changes to StatusDeploying and StatusDeployed asynchronously
 			"Started deployment of helloplaybook/chickenman",
 			nil,
 		},
@@ -43,10 +41,6 @@ func TestDeployExecute(t *testing.T) {
 		msg, err := command.Execute()
 		assert.Equal(t, testcase.ExpectedMsg, msg, testcase.Scenario)
 		assert.Equal(t, testcase.E, err, testcase.Scenario)
-
-		updatedInstance, err := is.Show(testcase.Instance.PlaybookID, testcase.Instance.ID)
-		assert.Nil(t, err)
-		assert.Equal(t, testcase.ExpectedStatus, updatedInstance.Status, testcase.Scenario)
 	}
 }
 
@@ -184,15 +178,15 @@ func TestDelete(t *testing.T) {
 			"When a proper delete syntax is sent",
 			&instance.Instance{PlaybookID: "helloplaybook", ID: "randomid"},
 			"delete helloplaybook randomid",
-			"Instance successfully deleted",
+			"Started deletion of helloplaybook/randomid",
 			nil,
 		},
 		{
 			"When missing playbookid",
 			&instance.Instance{PlaybookID: "helloplaybook", ID: "randomid"},
 			"delete randomid",
-			"",
-			&InvalidDelete{},
+			commandHints,
+			nil,
 		},
 	}
 	is := NewInstanceService(store.New())

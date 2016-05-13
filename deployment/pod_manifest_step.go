@@ -99,3 +99,8 @@ func (s *PodManifestStep) Deploy() error {
 
 	return nil
 }
+
+// Destroy deletes pod
+func (s *PodManifestStep) Destroy() error {
+	return nil
+}

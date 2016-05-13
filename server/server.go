@@ -236,7 +236,7 @@ func (s *Server) postCommand(c *gin.Context) {
 	return
 }
 
-func doDeploySync(s *Server, pID string, ID string) (*instance.Instance, error) {
+func deploy(s *Server, pID string, ID string) (*instance.Instance, error) {
 	is := services.NewInstanceService(s.store)
 	i, err := is.Show(pID, ID)
 	if err != nil {
@@ -252,8 +252,24 @@ func doDeploySync(s *Server, pID string, ID string) (*instance.Instance, error) 
 	return i, nil
 }
 
+func del(s *Server, pID string, ID string) (*instance.Instance, error) {
+	is := services.NewInstanceService(s.store)
+	i, err := is.Show(pID, ID)
+	if err != nil {
+		return nil, err
+	}
+
+	ds := services.NewDeploymentService(s.store, s.playbooks, s.manifests)
+
+	err = ds.DeleteAndNotify(i)
+	if err != nil {
+		return nil, err
+	}
+	return i, nil
+}
+
 func (s *Server) deployInstance(c *gin.Context) {
-	i, err := doDeploySync(s, c.Param("playbookID"), c.Param("instanceID"))
+	i, err := deploy(s, c.Param("playbookID"), c.Param("instanceID"))
 	if err != nil {
 		glog.Error(err)
 		switch err.(type) {
@@ -269,13 +285,10 @@ func (s *Server) deployInstance(c *gin.Context) {
 }
 
 func (s *Server) deleteInstance(c *gin.Context) {
-	is := services.NewInstanceService(s.store)
-	ii, err := is.Show(c.Param("playbookID"), c.Param("instanceID"))
+	_, err := del(s, c.Param("playbookID"), c.Param("instanceID"))
 	if err != nil {
+		glog.Error(err)
 		switch err.(type) {
-		case instance.MalformedSavedData:
-			c.JSON(http.StatusInternalServerError, CustomError(err.Error()))
-			return
 		case instance.NotFound:
 			c.JSON(http.StatusNotFound, NotFoundError)
 			return
@@ -284,12 +297,5 @@ func (s *Server) deleteInstance(c *gin.Context) {
 			return
 		}
 	}
-
-	err = is.Delete(ii)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, InternalError)
-		return
-	}
-
-	c.JSON(http.StatusOK, "Instance successfully deleted")
+	c.JSON(http.StatusOK, map[string]string{"message": "Instance successfully deleted"})
 }

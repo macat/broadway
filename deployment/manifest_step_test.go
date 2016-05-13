@@ -70,6 +70,44 @@ func TestManifestStepDeploy(t *testing.T) {
 	}
 }
 
+func TestManifestStepDestroy(t *testing.T) {
+	cases := []struct {
+		Name     string
+		Object   runtime.Object
+		Expected string
+		Before   func()
+	}{
+		{
+			Name:     "Simple RC delete",
+			Object:   mustDeserialize(rct1),
+			Expected: "delete",
+			Before:   func() {},
+		},
+	}
+
+	for _, c := range cases {
+		// Reset client
+		client = &fake.FakeCore{&core.Fake{}}
+		f := client.(*fake.FakeCore).Fake
+		step := NewManifestStep(c.Object)
+		c.Before()
+		client.(*fake.FakeCore).Fake.ClearActions()
+		assert.Equal(t, 0, len(f.Actions()), c.Name+" action count did not reset")
+		err := step.Destroy()
+		assert.Nil(t, err, c.Name+" deploy returned with nil")
+
+		// manifest step should always fire only 1 actions
+		assert.Equal(t, 1, len(f.Actions()), c.Name+" fired less/more than 2 actions")
+
+		verbs := []string{}
+		for _, a := range f.Actions() {
+			verbs = append(verbs, a.GetVerb())
+		}
+
+		assert.Contains(t, verbs, c.Expected, c.Name+" actions didn't contain the expected verb")
+	}
+}
+
 var rct1 = `apiVersion: v1
 kind: ReplicationController
 metadata:

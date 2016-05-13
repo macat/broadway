@@ -79,6 +79,73 @@ func TestDeploy(t *testing.T) {
 	}
 }
 
+func TestDestroy(t *testing.T) {
+	cases := []struct {
+		Name     string
+		Tasks    []Task
+		Expected int
+	}{
+		{
+			Name: "Step with one manifest file",
+			Tasks: []Task{
+				{
+					Name: "First step",
+					Manifests: []string{
+						"test",
+					},
+				},
+			},
+			Expected: 1,
+		}, {
+			Name: "Step with 3 manifest files",
+			Tasks: []Task{
+				{
+					Name: "First step",
+					Manifests: []string{
+						"test",
+						"test2",
+						"test2",
+					},
+				},
+			},
+			Expected: 3,
+		},
+	}
+
+	vars := map[string]string{
+		"test": "ok",
+	}
+	m, _ := NewManifest("test", mtemplate)
+	manifests := map[string]*Manifest{
+		"test":  m,
+		"test2": m,
+	}
+
+	for _, c := range cases {
+		// Reset client
+		client.(*fake.FakeCore).Fake.ClearActions()
+
+		p := &Playbook{
+			ID:    "test",
+			Name:  "Test deployment",
+			Meta:  Meta{},
+			Vars:  []string{"test"},
+			Tasks: c.Tasks,
+		}
+
+		d := &KubernetesDeployment{
+			Playbook:  p,
+			Variables: vars,
+			Manifests: manifests,
+		}
+
+		err := d.Destroy()
+		assert.Nil(t, err, c.Name+" deployment should not return with error")
+		f := client.(*fake.FakeCore).Fake
+		assert.Equal(t, c.Expected, len(f.Actions()), c.Name+" should trigger actions.")
+	}
+}
+
 var mtemplate = `apiVersion: v1
 kind: ReplicationController
 metadata:

@@ -154,6 +154,68 @@ func sendDeploymentNotification(i *instance.Instance) error {
 	return m.Send()
 }
 
+// DeleteAndNotify deletes resources created by deployment
+func (d *DeploymentService) DeleteAndNotify(i *instance.Instance) error {
+	playbook, ok := d.playbooks[i.PlaybookID]
+	if !ok {
+		msg := fmt.Sprintf("Can't delete %s/%s: Playbook missing", i.PlaybookID, i.ID)
+		notify(i, msg)
+		return errors.New(msg)
+	}
+
+	if i.Status == instance.StatusDeleting {
+		msg := fmt.Sprintf("Can't delete %s/%s: Instance is being deleted already.", i.PlaybookID, i.ID)
+		notify(i, msg)
+		return errors.New(msg)
+	}
+
+	config, err := deployment.Config()
+	if err != nil {
+		msg := fmt.Sprintf("Can't delete %s/%s: Internal error", i.PlaybookID, i.ID)
+		notify(i, msg)
+		return err
+	}
+
+	i.Status = instance.StatusDeleting
+	err = d.repo.Save(i)
+	if err != nil {
+		glog.Errorf("Failed to save instance status Deleting for %s/%s. Error: %s\n", i.PlaybookID, i.ID, err.Error())
+		return err
+	}
+
+	deployer, err := deployment.NewKubernetesDeployment(config, playbook, vars(i), d.manifests)
+	if err != nil {
+		msg := fmt.Sprintf("Can't delete %s/%s: Internal error", i.PlaybookID, i.ID)
+		notify(i, msg)
+		return err
+	}
+
+	errD := deployer.Destroy()
+	if errD != nil {
+		// Mark the instance as problematic:
+		i.Status = instance.StatusError
+		err := d.repo.Save(i)
+		if err != nil {
+			glog.Errorf("Failed to save instance.StatusError for %s/%s; not sending notification:\n%s\n", i.PlaybookID, i.ID, err.Error())
+			return err
+		}
+
+		// Report the problem:
+		msg := fmt.Sprintf("Deploying %s/%s failed: %s\n", i.PlaybookID, i.ID, errD.Error())
+		glog.Error(msg)
+		m := notification.NewMessage(false, msg)
+		err = m.Send()
+		if err != nil {
+			return err
+		}
+
+		return errD
+	}
+
+	return nil
+
+}
+
 func notify(i *instance.Instance, msg string) {
 	m := notification.NewMessage(false, msg)
 	err := m.Send()
