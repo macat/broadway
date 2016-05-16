@@ -80,7 +80,7 @@ func (d *KubernetesDeployment) Deploy() error {
 		glog.Infof("%d. Deploying Task %s...", i, taskstep.task.Name)
 		err := taskstep.step.Deploy()
 		if err != nil {
-			glog.Warning("%d. step failed.")
+			glog.Warning("%d. step failed: %s", i, err.Error())
 			return err
 		}
 		glog.Infof("Done.")
@@ -97,8 +97,12 @@ func (d *KubernetesDeployment) Destroy() error {
 	}
 
 	for i, taskstep := range tasksteps {
-		glog.Infof("%d. Deploying Task %s...", i, taskstep.task.Name)
-		taskstep.step.Destroy()
+		glog.Infof("%d. Destroying Task Resources %s...", i, taskstep.task.Name)
+		err := taskstep.step.Destroy()
+		if err != nil {
+			glog.Warning("%d. step failed: %s", i, err.Error())
+			return err
+		}
 	}
 	return nil
 }

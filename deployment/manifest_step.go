@@ -83,6 +83,7 @@ func (s *ManifestStep) Deploy() error {
 
 // Destroy deletes kubernetes resource
 func (s *ManifestStep) Destroy() error {
+	var err error
 	oGVK := s.object.GetObjectKind().GroupVersionKind()
 	meta, err := api.ObjectMetaFor(s.object)
 	if err != nil {
@@ -90,11 +91,14 @@ func (s *ManifestStep) Destroy() error {
 	}
 	switch oGVK.Kind {
 	case "ReplicationController":
-		client.ReplicationControllers(namespace).Delete(meta.Name, nil)
+		err = client.ReplicationControllers(namespace).Delete(meta.Name, nil)
 	case "Service":
-		client.Services(namespace).Delete(meta.Name, nil)
+		err = client.Services(namespace).Delete(meta.Name, nil)
 	case "Pod":
-		client.Pods(namespace).Delete(meta.Name, nil)
+		err = client.Pods(namespace).Delete(meta.Name, nil)
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
