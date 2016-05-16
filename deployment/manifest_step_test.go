@@ -33,13 +33,13 @@ func TestManifestStepDeploy(t *testing.T) {
 		{
 			Name:     "Simple RC create",
 			Object:   mustDeserialize(rct1),
-			Expected: "update",
+			Expected: "create",
 			Before:   func() {},
 		},
 		{
 			Name:     "Simple RC update",
 			Object:   mustDeserialize(rct1),
-			Expected: "update",
+			Expected: "create",
 			Before: func() {
 				rc := mustDeserialize(rct1).(*v1.ReplicationController)
 				client.ReplicationControllers("test").Create(rc)
@@ -57,9 +57,6 @@ func TestManifestStepDeploy(t *testing.T) {
 		assert.Equal(t, 0, len(f.Actions()), c.Name+" action count did not reset")
 		err := step.Deploy()
 		assert.Nil(t, err, c.Name+" deploy returned with nil")
-
-		// manifest step should always fire only 2 actions
-		assert.Equal(t, 2, len(f.Actions()), c.Name+" fired less/more than 2 actions")
 
 		verbs := []string{}
 		for _, a := range f.Actions() {

@@ -74,8 +74,6 @@ func TestDeploy(t *testing.T) {
 
 		err := d.Deploy()
 		assert.Nil(t, err, c.Name+" deployment should not return with error")
-		f := client.(*fake.FakeCore).Fake
-		assert.Equal(t, c.Expected, len(f.Actions()), c.Name+" should trigger actions.")
 	}
 }
 

@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"errors"
+	"time"
 
 	"github.com/golang/glog"
 	"k8s.io/kubernetes/pkg/api"
@@ -33,12 +34,18 @@ func (s *ManifestStep) Deploy() error {
 		rc, err := client.ReplicationControllers(namespace).Get(o.ObjectMeta.Name)
 
 		if err == nil && rc != nil {
-			glog.Info("Updating replication controller: ", o.ObjectMeta.Name)
-			_, err = client.ReplicationControllers(namespace).Update(o)
-		} else {
-			glog.Info("Creating new replication controller: ", o.ObjectMeta.Name)
-			_, err = client.ReplicationControllers(namespace).Create(o)
+			glog.Info("Deleting old replication controller: ", o.ObjectMeta.Name)
+			err = client.ReplicationControllers(namespace).Delete(o.ObjectMeta.Name, nil)
+
+			for k := 1; err == nil && k < 20; k++ {
+				time.Sleep(200 * time.Millisecond) // Wait for Kubernetes to delete the resource
+				_, err = client.ReplicationControllers(namespace).Get(o.ObjectMeta.Name)
+			}
 		}
+
+		glog.Info("Creating new replication controller: ", o.ObjectMeta.Name)
+		_, err = client.ReplicationControllers(namespace).Create(o)
+
 		if err != nil {
 			glog.Info("Create or Update failed: ", err)
 			return err
@@ -47,13 +54,18 @@ func (s *ManifestStep) Deploy() error {
 		o := s.object.(*v1.Pod)
 		_, err := client.Pods(namespace).Get(o.ObjectMeta.Name)
 
-		if err != nil {
-			glog.Info("Creating new pod: ", o.ObjectMeta.Name)
-			_, err = client.Pods(namespace).Create(o)
-		} else {
-			glog.Info("Updating pod", o.ObjectMeta.Name)
-			_, err = client.Pods(namespace).Update(o)
+		if err == nil {
+			glog.Info("Deleting old pod", o.ObjectMeta.Name)
+			err = client.Pods(namespace).Delete(o.ObjectMeta.Name, nil)
+
+			for k := 1; err == nil && k < 20; k++ {
+				time.Sleep(200 * time.Millisecond) // Wait for Kubernetes to delete the resource
+				_, err = client.Pods(namespace).Get(o.ObjectMeta.Name)
+			}
 		}
+
+		glog.Info("Creating new pod: ", o.ObjectMeta.Name)
+		_, err = client.Pods(namespace).Create(o)
 		if err != nil {
 			glog.Info("Create or Update failed: ", err)
 			return err
