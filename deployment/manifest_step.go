@@ -97,8 +97,5 @@ func (s *ManifestStep) Destroy() error {
 	case "Pod":
 		err = client.Pods(namespace).Delete(meta.Name, nil)
 	}
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
