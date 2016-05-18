@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package plugins;
+
+service InstanceEvents {
+	rpc Emit (InstanceEvent) returns (Ack) {};
+}
+
+enum InstanceStatus {
+	NEW = 0;
+	DEPLOYING = 1;
+	ERROR = 2;
+	DEPLOYED = 3;
+	DELETING = 4;
+	DELETED = 5;
+}
+
+message InstanceEvent {
+	string playbook = 1;
+	string instance = 2;
+	InstanceStatus status = 3;
+	string playbook_message = 4;
+}
+
+message Ack {
+	bool ok = 1;
+}
+
