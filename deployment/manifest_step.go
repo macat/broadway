@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"errors"
+	"reflect"
 	"time"
 
 	"github.com/golang/glog"
@@ -24,16 +25,80 @@ func NewManifestStep(object runtime.Object) Step {
 	}
 }
 
+func compareContainers(a, b v1.Container) bool {
+	return a.Name == b.Name && a.Image == b.Image &&
+		reflect.DeepEqual(a.Command, b.Command) &&
+		reflect.DeepEqual(a.Args, b.Args) && a.WorkingDir == b.WorkingDir &&
+		reflect.DeepEqual(a.Ports, b.Ports) &&
+		reflect.DeepEqual(a.Env, b.Env) &&
+		reflect.DeepEqual(a.Resources, b.Resources) &&
+		a.ImagePullPolicy == b.ImagePullPolicy
+}
+
+func compareContainerLists(a, b []v1.Container) bool {
+	aMap := map[string]v1.Container{}
+	bMap := map[string]v1.Container{}
+
+	for _, c := range a {
+		aMap[c.Name] = c
+	}
+	for _, c := range b {
+		aMap[c.Name] = c
+	}
+
+	if len(aMap) != len(bMap) {
+		return false
+	}
+
+	for name, ac := range aMap {
+		bc, ok := bMap[name]
+		if !ok {
+			return false
+		}
+		if !compareContainers(ac, bc) {
+			return false
+		}
+	}
+	return true
+}
+
+func comparePodSpecs(a, b v1.PodSpec) bool {
+	if len(a.Containers) != len(b.Containers) {
+		return false
+	}
+	if !compareContainerLists(a.Containers, b.Containers) {
+		return false
+	}
+	return reflect.DeepEqual(a.ImagePullSecrets, b.ImagePullSecrets) &&
+		a.NodeName == b.NodeName
+}
+
+func comparePods(a, b *v1.Pod) bool {
+	return reflect.DeepEqual(a.ObjectMeta, b.ObjectMeta) &&
+		comparePodSpecs(a.Spec, b.Spec)
+}
+
+func compareRCs(a, b *v1.ReplicationController) bool {
+	return reflect.DeepEqual(a.ObjectMeta, b.ObjectMeta) &&
+		reflect.DeepEqual(a.Spec.Replicas, a.Spec.Replicas) &&
+		reflect.DeepEqual(a.Spec.Selector, b.Spec.Selector) &&
+		reflect.DeepEqual(a.Spec.Template.ObjectMeta, b.Spec.Template.ObjectMeta) &&
+		comparePodSpecs(a.Spec.Template.Spec, b.Spec.Template.Spec)
+}
+
 // Deploy executes the deployment of a step
 func (s *ManifestStep) Deploy() error {
 	oGVK := s.object.GetObjectKind().GroupVersionKind()
 	switch oGVK.Kind {
 	case "ReplicationController":
 		o := s.object.(*v1.ReplicationController)
-
 		rc, err := client.ReplicationControllers(namespace).Get(o.ObjectMeta.Name)
-
 		if err == nil && rc != nil {
+			if compareRCs(rc, o) {
+				glog.Info("Existing RC is identical, skipping deployment")
+				return nil
+			}
+
 			glog.Info("Deleting old replication controller: ", o.ObjectMeta.Name)
 			err = client.ReplicationControllers(namespace).Delete(o.ObjectMeta.Name, nil)
 
@@ -47,14 +112,18 @@ func (s *ManifestStep) Deploy() error {
 		_, err = client.ReplicationControllers(namespace).Create(o)
 
 		if err != nil {
-			glog.Info("Create or Update failed: ", err)
+			glog.Error("Create or Update failed: ", err)
 			return err
 		}
 	case "Pod":
 		o := s.object.(*v1.Pod)
-		_, err := client.Pods(namespace).Get(o.ObjectMeta.Name)
+		pod, err := client.Pods(namespace).Get(o.ObjectMeta.Name)
 
-		if err == nil {
+		if err == nil && pod != nil {
+			if comparePods(pod, o) {
+				glog.Info("Existing Pod is identical, skipping deployment")
+				return nil
+			}
 			glog.Info("Deleting old pod", o.ObjectMeta.Name)
 			err = client.Pods(namespace).Delete(o.ObjectMeta.Name, nil)
 
