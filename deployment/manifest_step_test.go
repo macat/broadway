@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
 	"k8s.io/kubernetes/pkg/client/typed/generated/core/v1/fake"
@@ -28,21 +29,27 @@ func TestManifestStepDeploy(t *testing.T) {
 		Name     string
 		Object   runtime.Object
 		Expected string
-		Before   func()
+		Before   func(*core.Fake)
 	}{
 		{
 			Name:     "Simple RC create",
 			Object:   mustDeserialize(rct1),
 			Expected: "create",
-			Before:   func() {},
+			Before:   func(f *core.Fake) {},
 		},
 		{
 			Name:     "Simple RC update",
 			Object:   mustDeserialize(rct1),
-			Expected: "create",
-			Before: func() {
+			Expected: "get",
+			Before: func(f *core.Fake) {
 				rc := mustDeserialize(rct1).(*v1.ReplicationController)
-				client.ReplicationControllers("test").Create(rc)
+
+				o := core.NewObjects(api.Scheme, api.Codecs.UniversalDecoder())
+				if err := o.Add(rc); err != nil {
+					panic(err)
+				}
+
+				f.AddReactor("*", "*", core.ObjectReaction(o, api.RESTMapper))
 			},
 		},
 	}
@@ -52,7 +59,7 @@ func TestManifestStepDeploy(t *testing.T) {
 		client = &fake.FakeCore{&core.Fake{}}
 		f := client.(*fake.FakeCore).Fake
 		step := NewManifestStep(c.Object)
-		c.Before()
+		c.Before(f)
 		client.(*fake.FakeCore).Fake.ClearActions()
 		assert.Equal(t, 0, len(f.Actions()), c.Name+" action count did not reset")
 		err := step.Deploy()

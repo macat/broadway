@@ -43,7 +43,7 @@ func compareContainerLists(a, b []v1.Container) bool {
 		aMap[c.Name] = c
 	}
 	for _, c := range b {
-		aMap[c.Name] = c
+		bMap[c.Name] = c
 	}
 
 	if len(aMap) != len(bMap) {
@@ -69,8 +69,7 @@ func comparePodSpecs(a, b v1.PodSpec) bool {
 	if !compareContainerLists(a.Containers, b.Containers) {
 		return false
 	}
-	return reflect.DeepEqual(a.ImagePullSecrets, b.ImagePullSecrets) &&
-		a.NodeName == b.NodeName
+	return reflect.DeepEqual(a.ImagePullSecrets, b.ImagePullSecrets)
 }
 
 func comparePods(a, b *v1.Pod) bool {
@@ -79,8 +78,11 @@ func comparePods(a, b *v1.Pod) bool {
 }
 
 func compareRCs(a, b *v1.ReplicationController) bool {
+	if a.ObjectMeta.Name == "" {
+		return false
+	}
 	return reflect.DeepEqual(a.ObjectMeta, b.ObjectMeta) &&
-		reflect.DeepEqual(a.Spec.Replicas, a.Spec.Replicas) &&
+		reflect.DeepEqual(a.Spec.Replicas, b.Spec.Replicas) &&
 		reflect.DeepEqual(a.Spec.Selector, b.Spec.Selector) &&
 		reflect.DeepEqual(a.Spec.Template.ObjectMeta, b.Spec.Template.ObjectMeta) &&
 		comparePodSpecs(a.Spec.Template.Spec, b.Spec.Template.Spec)

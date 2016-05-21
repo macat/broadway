@@ -40,7 +40,7 @@ type TaskStep struct {
 }
 
 func init() {
-	scheme := runtime.NewScheme()
+	scheme = runtime.NewScheme()
 	v1.AddToScheme(scheme)
 	factory := serializer.NewCodecFactory(scheme)
 	deserializer = factory.UniversalDeserializer()
