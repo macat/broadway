@@ -93,7 +93,17 @@ func (s *ManifestStep) Deploy() error {
 	oGVK := s.object.GetObjectKind().GroupVersionKind()
 	switch oGVK.Kind {
 	case "ReplicationController":
-		o := s.object.(*v1.ReplicationController)
+		var o *v1.ReplicationController
+		switch s.object.(type) {
+		case *v1.ReplicationController:
+			o = s.object.(*v1.ReplicationController)
+		case *api.ReplicationController:
+			rr := s.object.(*api.ReplicationController)
+			if err := scheme.Convert(rr, o); err != nil {
+				glog.Error("API object conversion failed.")
+				return err
+			}
+		}
 		rc, err := client.ReplicationControllers(namespace).Get(o.ObjectMeta.Name)
 		if err == nil && rc != nil {
 			if compareRCs(rc, o) {

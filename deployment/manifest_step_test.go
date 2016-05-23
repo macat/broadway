@@ -28,21 +28,43 @@ func TestManifestStepDeploy(t *testing.T) {
 	cases := []struct {
 		Name     string
 		Object   runtime.Object
-		Expected string
+		Expected []string
 		Before   func(*core.Fake)
 	}{
 		{
 			Name:     "Simple RC create",
 			Object:   mustDeserialize(rct1),
-			Expected: "create",
-			Before:   func(f *core.Fake) {},
+			Expected: []string{"get", "delete", "create"},
+			Before: func(f *core.Fake) {
+				rc := mustDeserialize(rct3).(*v1.ReplicationController)
+				o := core.NewObjects(api.Scheme, api.Codecs.UniversalDecoder())
+				if err := o.Add(rc); err != nil {
+					panic(err)
+				}
+				f.AddReactor("*", "*", core.ObjectReaction(o, api.RESTMapper))
+			},
 		},
 		{
-			Name:     "Simple RC update",
+			Name:     "RC identical update",
 			Object:   mustDeserialize(rct1),
-			Expected: "get",
+			Expected: []string{"get"},
 			Before: func(f *core.Fake) {
 				rc := mustDeserialize(rct1).(*v1.ReplicationController)
+
+				o := core.NewObjects(api.Scheme, api.Codecs.UniversalDecoder())
+				if err := o.Add(rc); err != nil {
+					panic(err)
+				}
+
+				f.AddReactor("*", "*", core.ObjectReaction(o, api.RESTMapper))
+			},
+		},
+		{
+			Name:     "RC simple update",
+			Object:   mustDeserialize(rct1),
+			Expected: []string{"get", "delete", "create"},
+			Before: func(f *core.Fake) {
+				rc := mustDeserialize(rct2).(*v1.ReplicationController)
 
 				o := core.NewObjects(api.Scheme, api.Codecs.UniversalDecoder())
 				if err := o.Add(rc); err != nil {
@@ -59,18 +81,30 @@ func TestManifestStepDeploy(t *testing.T) {
 		client = &fake.FakeCore{&core.Fake{}}
 		f := client.(*fake.FakeCore).Fake
 		step := NewManifestStep(c.Object)
+		f.ReactionChain = nil
 		c.Before(f)
-		client.(*fake.FakeCore).Fake.ClearActions()
+		f.ClearActions()
 		assert.Equal(t, 0, len(f.Actions()), c.Name+" action count did not reset")
 		err := step.Deploy()
 		assert.Nil(t, err, c.Name+" deploy returned with nil")
 
-		verbs := []string{}
+		verbs := map[string]bool{}
 		for _, a := range f.Actions() {
-			verbs = append(verbs, a.GetVerb())
+			verbs[a.GetVerb()] = true
 		}
 
-		assert.Contains(t, verbs, c.Expected, c.Name+" actions didn't contain the expected verb")
+		fired := map[string]bool{}
+		for verb := range verbs {
+			assert.Contains(t, c.Expected, verb, c.Name+" didn't expect this action.")
+			fired[verb] = true
+		}
+
+		expected := map[string]bool{}
+		for f := range fired {
+			expected[f] = true
+		}
+
+		assert.Equal(t, expected, fired, c.Name+" actions don't match the actually fired actions.")
 	}
 }
 
@@ -120,6 +154,42 @@ spec:
   replicas: 1
   selector:
     name: redis
+  template:
+    metadata:
+      labels:
+        name: redis
+    spec:
+      containers:
+      - name: redis
+        image: kubernetes/redis:v1
+`
+
+var rct2 = `apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: test2
+spec:
+  replicas: 1
+  selector:
+    name: redis-2
+  template:
+    metadata:
+      labels:
+        name: redis
+    spec:
+      containers:
+      - name: redis
+        image: kubernetes/redis:v1
+`
+
+var rct3 = `apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: test3
+spec:
+  replicas: 1
+  selector:
+    name: redis-2
   template:
     metadata:
       labels:
