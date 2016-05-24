@@ -8,19 +8,19 @@ import (
 
 func TestExecute(t *testing.T) {
 	cases := []struct {
-		name     string
+		scenario string
 		template string
 		vars     map[string]string
 		expected string
 	}{
 		{
-			name:     "simple",
+			scenario: "simple",
 			template: `{{ .test }}`,
 			vars:     map[string]string{"test": "hello!"},
 			expected: "hello!",
 		},
 		{
-			name:     "template",
+			scenario: "template",
 			template: `{{ $cities := split .test ","}}{{ join $cities "+" }}`,
 			vars:     map[string]string{"test": "brooklyn,manhattan"},
 			expected: "brooklyn+manhattan",
@@ -28,9 +28,9 @@ func TestExecute(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		m, err := NewManifest(c.name, c.template)
+		m, err := NewManifest(c.scenario, c.template)
 		assert.Nil(t, err)
 		out := m.Execute(c.vars)
-		assert.Equal(t, c.expected, out, c.name+" case does not match output")
+		assert.Equal(t, c.expected, out, c.scenario+" case does not match output")
 	}
 }
