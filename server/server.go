@@ -231,7 +231,7 @@ func (s *Server) postCommand(c *gin.Context) {
 	}
 
 	// Craft a Slack payload for an ephemeral message:
-	j := notification.NewMessage(true, msg)
+	j := notification.NewMessage(false, msg)
 	c.JSON(http.StatusOK, j)
 	return
 }
