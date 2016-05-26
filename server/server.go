@@ -117,15 +117,15 @@ func (s *Server) home(c *gin.Context) {
 }
 
 func (s *Server) createInstance(c *gin.Context) {
-	var i instance.Instance
-	if err := c.BindJSON(&i); err != nil {
+	i := new(instance.Instance)
+	if err := c.BindJSON(i); err != nil {
 		glog.Error(err)
 		c.JSON(http.StatusBadRequest, CustomError("Missing: "+err.Error()))
 		return
 	}
 
 	service := services.NewInstanceService(store.New())
-	createdInstance, err := service.Create(&i)
+	i, err := service.CreateOrUpdate(i)
 
 	if err != nil {
 		glog.Error(err)
@@ -133,7 +133,7 @@ func (s *Server) createInstance(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, createdInstance)
+	c.JSON(http.StatusCreated, i)
 }
 
 func (s *Server) getInstance(c *gin.Context) {

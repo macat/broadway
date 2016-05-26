@@ -4,45 +4,53 @@ import (
 	"testing"
 	"time"
 
+	"github.com/namely/broadway/env"
 	"github.com/namely/broadway/instance"
 	"github.com/namely/broadway/store"
 	"github.com/stretchr/testify/assert"
 )
 
+func cleanup() {
+	store.New().Delete(env.EtcdPath + "/instances")
+}
+
 func TestCreateInstanceFromMissingPlaybook(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 	store := store.New()
 	is := NewInstanceService(store)
 
 	i := &instance.Instance{PlaybookID: "vanishing-pb", ID: "gone"}
-	_, err := is.Create(i)
+	_, err := is.CreateOrUpdate(i)
 
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "playbook vanishing-pb is missing")
 }
 
 func TestCreateInstanceWithIncorrectVars(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 	store := store.New()
 	is := NewInstanceService(store)
 
 	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "TestCreateInstanceWithIncorrectVars", Vars: map[string]string{"metal": "plutonium"}}
-	ii, err := is.Create(i)
+	ii, err := is.CreateOrUpdate(i)
 	assert.Nil(t, ii)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "does not declare a var named metal")
 }
 
 func TestCreateInstanceNotification(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 
 	store := store.New()
 	is := NewInstanceService(store)
 	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "TestCreateInstanceNotification"}
-	_, err := is.Create(i)
+	_, err := is.CreateOrUpdate(i)
 	assert.Nil(t, err)
 
 	assert.Contains(t, nt.requestBody, "created")
@@ -51,13 +59,14 @@ func TestCreateInstanceNotification(t *testing.T) {
 }
 
 func TestCreateInstanceCustomNotification(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 
 	store := store.New()
 	is := NewInstanceService(store)
 	i := &instance.Instance{PlaybookID: "messagesplaybook", ID: "TestCreateInstanceCustomNotification"}
-	_, err := is.Create(i)
+	_, err := is.CreateOrUpdate(i)
 	assert.Nil(t, err)
 
 	assert.Contains(t, nt.requestBody, "custom created")
@@ -65,13 +74,14 @@ func TestCreateInstanceCustomNotification(t *testing.T) {
 }
 
 func TestCreateInstanceWithInvalidId(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 	store := store.New()
 	is := NewInstanceService(store)
 
 	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "Test*Create_Instance"}
-	ii, err := is.Create(i)
+	ii, err := is.CreateOrUpdate(i)
 	assert.Nil(t, ii)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "Test*Create_Instance")
@@ -79,13 +89,14 @@ func TestCreateInstanceWithInvalidId(t *testing.T) {
 }
 
 func TestCreateInstance(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 	store := store.New()
 	is := NewInstanceService(store)
 
 	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "TestCreateInstance"}
-	ii, err := is.Create(i)
+	ii, err := is.CreateOrUpdate(i)
 	assert.Nil(t, err)
 	assert.Equal(t, "helloplaybook", ii.PlaybookID)
 	assert.Equal(t, instance.StatusNew, ii.Status)
@@ -100,7 +111,29 @@ func TestCreateInstance(t *testing.T) {
 	assert.True(t, time2.After(time1), "instance timestamp is more than a minute old")
 }
 
+func TestUpdateInstance(t *testing.T) {
+	cleanup()
+	nt := newNotificationTestHelper()
+	defer nt.Close()
+	store := store.New()
+	is := NewInstanceService(store)
+
+	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "TestUpdateInstance", Status: instance.StatusDeployed}
+	ii, err := is.CreateOrUpdate(i)
+	assert.Nil(t, err)
+
+	ii.Vars["word"] = "test"
+	iii, err := is.CreateOrUpdate(ii)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "helloplaybook", iii.PlaybookID)
+	assert.EqualValues(t, instance.StatusDeployed, iii.Status)
+	assert.Equal(t, "test", iii.Vars["word"])
+	assert.Equal(t, ii.Created, iii.Created)
+}
+
 func TestShow(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 
@@ -108,7 +141,7 @@ func TestShow(t *testing.T) {
 	is := NewInstanceService(store)
 
 	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "TestShow"}
-	ii, err := is.Create(i)
+	ii, err := is.CreateOrUpdate(i)
 	assert.Nil(t, err)
 	assert.Equal(t, "helloplaybook", ii.PlaybookID)
 	assert.Equal(t, "TestShow", ii.ID)
@@ -125,12 +158,13 @@ func TestShowMissingInstance(t *testing.T) {
 }
 
 func TestAllWithPlaybookID(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 	is := NewInstanceService(store.New())
 
 	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "TestAllWithPlaybookID"}
-	_, err := is.Create(i)
+	_, err := is.CreateOrUpdate(i)
 	if err != nil {
 		t.Fatal("TestAllWithPlaybookID: ", err)
 	}
@@ -142,6 +176,7 @@ func TestAllWithPlaybookID(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 	instanceService := NewInstanceService(store.New())
@@ -164,7 +199,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		createdInstance, err := instanceService.Create(testcase.Instance)
+		createdInstance, err := instanceService.CreateOrUpdate(testcase.Instance)
 		if err != nil {
 			t.Fatal(testcase.Scenario, err)
 		}
@@ -179,13 +214,14 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestDeleteWhenExistentInstance(t *testing.T) {
+	cleanup()
 	nt := newNotificationTestHelper()
 	defer nt.Close()
 	is := NewInstanceService(store.New())
 
 	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "new"}
 
-	createdInstance, err := is.Create(i)
+	createdInstance, err := is.CreateOrUpdate(i)
 	if err != nil {
 		t.Log(err)
 	}
@@ -194,6 +230,7 @@ func TestDeleteWhenExistentInstance(t *testing.T) {
 }
 
 func TestDeleteWhenNonExistantInstance(t *testing.T) {
+	cleanup()
 	is := NewInstanceService(store.New())
 	i := &instance.Instance{PlaybookID: "random", ID: "bar"}
 

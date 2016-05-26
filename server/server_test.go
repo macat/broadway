@@ -126,7 +126,7 @@ func TestGetInstanceWithValidPath(t *testing.T) {
 	store := store.New()
 	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "TestGetInstanceWithValidPath"}
 	service := services.NewInstanceService(store)
-	_, err := service.Create(i)
+	_, err := service.CreateOrUpdate(i)
 	if err != nil {
 		t.Log(err.Error())
 	}
@@ -150,8 +150,8 @@ func TestGetInstancesWithFullPlaybook(t *testing.T) {
 	testInstance1 := &instance.Instance{PlaybookID: "helloplaybook", ID: "TestGetInstancesWithFullPlaybook1"}
 	testInstance2 := &instance.Instance{PlaybookID: "helloplaybook", ID: "TestGetInstancesWithFullPlaybook2"}
 	service := services.NewInstanceService(store.New())
-	_, err := service.Create(testInstance1)
-	_, err = service.Create(testInstance2)
+	_, err := service.CreateOrUpdate(testInstance1)
+	_, err = service.CreateOrUpdate(testInstance2)
 	if err != nil {
 		t.Log(err.Error())
 	}
@@ -199,7 +199,7 @@ func TestGetStatusWithGoodPath(t *testing.T) {
 		ID:         "TestGetStatusWithGoodPath",
 		Status:     instance.StatusDeployed}
 	is := services.NewInstanceService(store.New())
-	_, err := is.Create(testInstance1)
+	_, err := is.CreateOrUpdate(testInstance1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,7 +292,7 @@ func TestSlackCommandSetvar(t *testing.T) {
 
 	i := &instance.Instance{PlaybookID: "boing", ID: "bar", Vars: map[string]string{"var1": "val2"}}
 	is := services.NewInstanceService(store.New())
-	_, err := is.Create(i)
+	_, err := is.CreateOrUpdate(i)
 	if err != nil {
 		t.Log(err)
 	}
@@ -313,7 +313,7 @@ func TestSlackCommandDelete(t *testing.T) {
 
 	i := &instance.Instance{PlaybookID: "helloplaybook", ID: "forserver"}
 	is := services.NewInstanceService(store.New())
-	_, err := is.Create(i)
+	_, err := is.CreateOrUpdate(i)
 	if err != nil {
 		t.Log(err)
 	}
@@ -363,7 +363,7 @@ func TestDeleteWhenExistentInstance(t *testing.T) {
 		ID:         "TestGetStatusWithGoodPath",
 		Status:     instance.StatusDeployed}
 	is := services.NewInstanceService(store.New())
-	_, err := is.Create(testInstance1)
+	_, err := is.CreateOrUpdate(testInstance1)
 	if err != nil {
 		t.Fatal(err)
 	}

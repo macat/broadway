@@ -32,7 +32,7 @@ func TestDeployExecute(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := is.Create(testcase.Instance)
+		_, err := is.CreateOrUpdate(testcase.Instance)
 		if err != nil {
 			t.Log(err)
 		}
@@ -147,7 +147,7 @@ func TestSetvarExecute(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := is.Create(testcase.Instance)
+		_, err := is.CreateOrUpdate(testcase.Instance)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -191,7 +191,7 @@ func TestDelete(t *testing.T) {
 	}
 	is := NewInstanceService(store.New())
 	for _, testcase := range testcases {
-		_, err := is.Create(testcase.Instance)
+		_, err := is.CreateOrUpdate(testcase.Instance)
 		if err != nil {
 			t.Log(err)
 		}

@@ -14,6 +14,9 @@ import (
 	"github.com/namely/broadway/store"
 )
 
+var sanitizer = regexp.MustCompile(`[^a-zA-Z0-9\-]`)
+var validator = regexp.MustCompile(`^[a-zA-Z0-9\-]{1,253}$`)
+
 // InstanceService definition
 type InstanceService struct {
 	repo instance.Repository
@@ -54,56 +57,80 @@ func (e *InvalidID) Error() string {
 	return fmt.Sprintf("%s is an invalid id; valid characters are dash and alphanumerics. Try %s", e.badID, e.suggestedID)
 }
 
-// Create a new instance
-func (is *InstanceService) Create(i *instance.Instance) (*instance.Instance, error) {
-	sanitizer, err := regexp.Compile(`[^a-zA-Z0-9\-]`)
-	if err != nil {
-		panic(err)
-	}
-	validator, err := regexp.Compile(`^[a-zA-Z0-9\-]{1,253}$`)
-	if err != nil {
-		panic(err)
-	}
-	match := validator.FindStringIndex(i.ID)
+func validateID(id string) error {
+	match := validator.FindStringIndex(id)
 	if match == nil {
-		x := sanitizer.ReplaceAllString(i.ID, "-")
+		x := sanitizer.ReplaceAllString(id, "-")
 		if len(x) > 253 {
 			x = x[0:253]
 		}
-		return nil, &InvalidID{
-			badID:       i.ID,
+		return &InvalidID{
+			badID:       id,
 			suggestedID: x,
 		}
+	}
+	return nil
+}
+
+// CreateOrUpdate a new instance
+func (is *InstanceService) CreateOrUpdate(i *instance.Instance) (*instance.Instance, error) {
+	if err := validateID(i.ID); err != nil {
+		return nil, err
+	}
+
+	existing, err := is.repo.FindByID(i.PlaybookID, i.ID)
+	glog.Info("--------")
+	glog.Info(existing)
+	if err != nil {
+		switch err.(type) {
+		case instance.MalformedSavedData:
+			return nil, err
+		}
+		i.Created = time.Now().Unix()
+	} else {
+		i.Status = existing.Status
 	}
 
 	pb, ok := deployment.AllPlaybooks[i.PlaybookID]
 	if !ok {
 		return nil, &PlaybookNotFound{i.PlaybookID}
 	}
-	// Set all vars declared in playbook to default empty string
-	vars := make(map[string]string)
-	for _, pv := range pb.Vars {
-		vars[pv] = ""
+
+	// Create lookup map for playbok variables
+	vs := make(map[string]bool)
+	for _, v := range pb.Vars {
+		vs[v] = true
 	}
-	// Abort if new instance tries to set vars not declared in playbook
-	for k, v := range i.Vars {
-		_, valid := vars[k]
-		if !valid { // k is not listed in playbook
+
+	// Validate vars
+	for k := range i.Vars {
+		if vs[k] != true {
 			return nil, &InvalidVar{i.PlaybookID, k}
 		}
-		vars[k] = v
 	}
 
+	vars := make(map[string]string)
+	for _, pv := range pb.Vars {
+		vars[pv] = "" // default to empty string
+		if existing != nil {
+			v, ok := existing.Vars[pv]
+			if ok {
+				vars[pv] = v // use existing value
+			}
+		}
+		v, ok := i.Vars[pv]
+		if ok == true {
+			vars[pv] = v
+		}
+	}
 	i.Vars = vars
-
-	// This is seconds resolution, multiply by 1000 for javascript ms timestamp:
-	i.Created = time.Now().Unix()
 
 	err = is.repo.Save(i)
 	if err != nil {
 		return nil, err
 	}
-	err = sendCreationNotification(i)
+
+	err = sendNotification(existing != nil, i)
 	if err != nil {
 		return nil, err
 	}
@@ -145,18 +172,26 @@ func (is *InstanceService) Delete(i *instance.Instance) error {
 	return is.repo.Delete(ii)
 }
 
-func sendCreationNotification(i *instance.Instance) error {
+func sendNotification(update bool, i *instance.Instance) error {
 	pb, ok := deployment.AllPlaybooks[i.PlaybookID]
 	if !ok {
 		return fmt.Errorf("Failed to lookup playbook for instance %+v", *i)
 	}
 
+	s := "created"
+	if update == true {
+		s = "updated"
+	}
+
 	atts := []notification.Attachment{
 		{
-			Text: fmt.Sprintf("New broadway instance was created: %s %s.", i.PlaybookID, i.ID),
+			Text: fmt.Sprintf("Broadway instance was %s: %s %s.", s, i.PlaybookID, i.ID),
 		},
 	}
 	tp, ok := pb.Messages["created"]
+	if update == true {
+		tp, ok = pb.Messages["updated"]
+	}
 	if ok {
 		b := new(bytes.Buffer)
 		err := template.Must(template.New("created").Parse(tp)).Execute(b, vars(i))
