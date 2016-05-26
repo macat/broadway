@@ -79,8 +79,6 @@ func (is *InstanceService) CreateOrUpdate(i *instance.Instance) (*instance.Insta
 	}
 
 	existing, err := is.repo.FindByID(i.PlaybookID, i.ID)
-	glog.Info("--------")
-	glog.Info(existing)
 	if err != nil {
 		switch err.(type) {
 		case instance.MalformedSavedData:
