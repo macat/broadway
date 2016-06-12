@@ -160,11 +160,17 @@ func (c *deleteCommand) Execute() (string, error) {
 
 	go func() {
 		glog.Infof("Asynchronously deleting %s/%s...", i.PlaybookID, i.ID)
-		err := ds.DeleteAndNotify(i)
-		if err != nil {
+
+		if err := ds.DeleteAndNotify(i); err != nil {
 			glog.Errorf("Slack command failed to delete instance %s/%s:\n%s\n", i.PlaybookID, i.ID, err)
 			return
 		}
+
+		if err := c.is.Delete(i); err != nil {
+			glog.Errorf("Slack command failed to delete instance %s/%s:\n%s\n", i.PlaybookID, i.ID, err)
+			return
+		}
+
 		glog.Infof("Slack command successfully deleted instance %s/%s", i.PlaybookID, i.ID)
 		return
 	}()
