@@ -377,6 +377,8 @@ func TestDeleteWhenExistentInstance(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code, "Expected DELETE /instances to return 200")
 	assert.Contains(t, w.Body.String(), "Instance successfully deleted")
+	_, err = is.Show("helloplaybook", "TestGetStatusWithGoodPath")
+	assert.IsType(t, instance.NotFound{}, err)
 }
 
 func TestDeleteWhenNonExistantInstance(t *testing.T) {
