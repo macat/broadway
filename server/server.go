@@ -252,28 +252,6 @@ func deploy(s *Server, pID string, ID string) (*instance.Instance, error) {
 	return i, nil
 }
 
-func del(s *Server, pID string, ID string) error {
-	is := services.NewInstanceService(s.store)
-	i, err := is.Show(pID, ID)
-	if err != nil {
-		return nil, err
-	}
-
-	ds := services.NewDeploymentService(s.store, s.playbooks, s.manifests)
-
-	if err := ds.DeleteAndNotify(i); err != nil {
-		glog.Errorf("Failed to delete instance %s/%s:\n%s\n", i.PlaybookID, i.ID, err)
-		return nil, err
-	}
-
-	if err := c.is.Delete(i); err != nil {
-		glog.Errorf("Failed to delete instance %s/%s:\n%s\n", i.PlaybookID, i.ID, err)
-		return nil, err
-	}
-
-	return i, nil
-}
-
 func (s *Server) deployInstance(c *gin.Context) {
 	i, err := deploy(s, c.Param("playbookID"), c.Param("instanceID"))
 	if err != nil {
@@ -291,17 +269,28 @@ func (s *Server) deployInstance(c *gin.Context) {
 }
 
 func (s *Server) deleteInstance(c *gin.Context) {
-	err := del(s, c.Param("playbookID"), c.Param("instanceID"))
+	is := services.NewInstanceService(s.store)
+
+	i, err := is.Show(c.Param("playbookID"), c.Param("instanceID"))
 	if err != nil {
-		glog.Error(err)
-		switch err.(type) {
-		case instance.NotFound:
-			c.JSON(http.StatusNotFound, NotFoundError)
-			return
-		default:
-			c.JSON(http.StatusInternalServerError, InternalError)
-			return
-		}
+		glog.Errorf("Failed to get instance %s/%s:\n%s\n", i.PlaybookID, i.ID, err)
+		c.JSON(http.StatusNotFound, NotFoundError)
+		return
 	}
+
+	ds := services.NewDeploymentService(s.store, s.playbooks, s.manifests)
+
+	if err := ds.DeleteAndNotify(i); err != nil {
+		glog.Errorf("Failed to delete instance %s/%s:\n%s\n", i.PlaybookID, i.ID, err)
+		c.JSON(http.StatusInternalServerError, InternalError)
+		return
+	}
+
+	if err := is.Delete(i); err != nil {
+		glog.Errorf("Failed to delete instance %s/%s:\n%s\n", i.PlaybookID, i.ID, err)
+		c.JSON(http.StatusInternalServerError, InternalError)
+		return
+	}
+
 	c.JSON(http.StatusOK, map[string]string{"message": "Instance successfully deleted"})
 }
