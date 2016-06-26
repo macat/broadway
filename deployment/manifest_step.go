@@ -111,7 +111,8 @@ func (s *ManifestStep) Deploy() error {
 				return nil
 			}
 
-			rc.Spec.Replicas = 0
+			var i int32
+			rc.Spec.Replicas = &i
 			client.ReplicationControllers(namespace).Update(rc)
 			time.Sleep(1 * time.Second) // Wait for Kubernetes to delete pods
 
