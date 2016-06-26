@@ -34,7 +34,7 @@ func TestManifestStepDeploy(t *testing.T) {
 		{
 			Name:     "Simple RC create",
 			Object:   mustDeserialize(rct1),
-			Expected: []string{"get", "delete", "create"},
+			Expected: []string{"get", "delete", "create", "update"},
 			Before: func(f *core.Fake) {
 				rc := mustDeserialize(rct3).(*v1.ReplicationController)
 				o := core.NewObjects(api.Scheme, api.Codecs.UniversalDecoder())
@@ -62,7 +62,7 @@ func TestManifestStepDeploy(t *testing.T) {
 		{
 			Name:     "RC simple update",
 			Object:   mustDeserialize(rct1),
-			Expected: []string{"get", "delete", "create"},
+			Expected: []string{"get", "delete", "create", "update"},
 			Before: func(f *core.Fake) {
 				rc := mustDeserialize(rct2).(*v1.ReplicationController)
 
