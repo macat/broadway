@@ -25,14 +25,30 @@ func NewManifestStep(object runtime.Object) Step {
 	}
 }
 
+func check(name string, r bool) bool {
+	if r == false {
+		glog.Info("Found difference: " + name)
+	}
+	return r
+}
+
+func compareI(name string, a, b interface{}) bool {
+	return check(name, reflect.DeepEqual(a, b))
+}
+
+func compareS(name, a, b string) bool {
+	return check(name, a == b)
+}
+
 func compareContainers(a, b v1.Container) bool {
 	return a.Name == b.Name && a.Image == b.Image &&
-		reflect.DeepEqual(a.Command, b.Command) &&
-		reflect.DeepEqual(a.Args, b.Args) && a.WorkingDir == b.WorkingDir &&
-		reflect.DeepEqual(a.Ports, b.Ports) &&
-		reflect.DeepEqual(a.Env, b.Env) &&
-		reflect.DeepEqual(a.Resources, b.Resources) &&
-		a.ImagePullPolicy == b.ImagePullPolicy
+		compareI("container command", a.Command, b.Command) &&
+		compareI("container args", a.Args, b.Args) &&
+		compareS("container workdir", a.WorkingDir, b.WorkingDir) &&
+		compareI("container ports", a.Ports, b.Ports) &&
+		compareI("container env", a.Env, b.Env) &&
+		compareI("container resources", a.Resources, b.Resources) &&
+		check("container pull policy", a.ImagePullPolicy == b.ImagePullPolicy)
 }
 
 func compareContainerLists(a, b []v1.Container) bool {
@@ -46,7 +62,7 @@ func compareContainerLists(a, b []v1.Container) bool {
 		bMap[c.Name] = c
 	}
 
-	if len(aMap) != len(bMap) {
+	if !check("conainer list len", len(aMap) == len(bMap)) {
 		return false
 	}
 
@@ -63,17 +79,17 @@ func compareContainerLists(a, b []v1.Container) bool {
 }
 
 func comparePodSpecs(a, b v1.PodSpec) bool {
-	if len(a.Containers) != len(b.Containers) {
+	if !check("pod spec containers len", len(a.Containers) == len(b.Containers)) {
 		return false
 	}
 	if !compareContainerLists(a.Containers, b.Containers) {
 		return false
 	}
-	return reflect.DeepEqual(a.ImagePullSecrets, b.ImagePullSecrets)
+	return compareI("pod spec image pull secrets", a.ImagePullSecrets, b.ImagePullSecrets)
 }
 
 func comparePods(a, b *v1.Pod) bool {
-	return reflect.DeepEqual(a.ObjectMeta, b.ObjectMeta) &&
+	return compareI("pod object meta", a.ObjectMeta, b.ObjectMeta) &&
 		comparePodSpecs(a.Spec, b.Spec)
 }
 
@@ -81,10 +97,10 @@ func compareRCs(a, b *v1.ReplicationController) bool {
 	if a.ObjectMeta.Name == "" {
 		return false
 	}
-	return reflect.DeepEqual(a.ObjectMeta, b.ObjectMeta) &&
-		reflect.DeepEqual(a.Spec.Replicas, b.Spec.Replicas) &&
-		reflect.DeepEqual(a.Spec.Selector, b.Spec.Selector) &&
-		reflect.DeepEqual(a.Spec.Template.ObjectMeta, b.Spec.Template.ObjectMeta) &&
+	return compareI("rc object meta", a.ObjectMeta, b.ObjectMeta) &&
+		compareI("rc spec replicas", a.Spec.Replicas, b.Spec.Replicas) &&
+		compareI("rc sepc selector", a.Spec.Selector, b.Spec.Selector) &&
+		compareI("rc spec template object meta", a.Spec.Template.ObjectMeta, b.Spec.Template.ObjectMeta) &&
 		comparePodSpecs(a.Spec.Template.Spec, b.Spec.Template.Spec)
 }
 
