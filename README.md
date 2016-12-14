@@ -9,7 +9,7 @@ workflows in Broadway playbooks. It runs as a service interacting with
 Kubernetes and allowing users to interact with it through various interfaces
 (Slack, CLI, Web).
 
-#### DEPRECATED: We now recommend using Kuberneted Helm instead of Broadway. https://github.com/kubernetes/helm
+#### DEPRECATED: We now recommend using Kubernetes Helm. https://github.com/kubernetes/helm
 
 ## Playbook
 A Broadway Playbook is a YAML file for defining a project's deployment tasks.
