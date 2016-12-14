@@ -5,7 +5,7 @@ services:
     build: .
     volumes:
       - .:/go/src/github.com/namely/broadway
-    command: go run cmd/broadway/server.go server
+    command: "bash -c 'go run cmd/broadway/*.go server'"
     environment:
       BROADWAY_AUTH_TOKEN: AA
       BROADWAY_PLAYBOOKS_PATH: "/go/src/github.com/namely/broadway/examples/playbooks"
