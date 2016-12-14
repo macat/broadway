@@ -9,6 +9,8 @@ workflows in Broadway playbooks. It runs as a service interacting with
 Kubernetes and allowing users to interact with it through various interfaces
 (Slack, CLI, Web).
 
+#### DEPRECATED: We now recommend using Kuberneted Helm instead of Broadway. https://github.com/kubernetes/helm
+
 ## Playbook
 A Broadway Playbook is a YAML file for defining a project's deployment tasks.
 
@@ -74,15 +76,17 @@ Now you should have a running Broadway server:
 
 ## Running Broadway
 
-To run the Broadway server with your playbooks, you can use `broadwayctl` to start it up. The default directory for playbooks is `$(pwd)/playbooks`.
+You can use `go run` to run the Broadway server with your playbooks. The default directory for playbooks is `$(pwd)/playbooks`.
 
 ```sh
-$ broadwayctl server --playbooks=./playbooks --addr=0.0.0.0:8080
+$ go run cmd/broadway/server.go server
 => starting broadway server...
 => loading playbooks...
 ```
 
 This will load the directory of playbooks and ensure that everything is hunky dory.
+
+We also included a docker-compose service to simplify running Broadway.
 
 ## Instance
 An instance represents a Broadway instance that may or may not be deployed.
